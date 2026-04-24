@@ -42,6 +42,17 @@ func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error
 		_ = p.state.Put(sourceNZB, ImportedRecord{QueueID: resp.QueueID, RelativePath: relativePath, Status: "submitted"})
 	}
 
+	item, err := p.waitForQueueReady(ctx, resp.QueueID)
+	if err != nil {
+		if p.state != nil {
+			_ = p.state.Put(sourceNZB, ImportedRecord{QueueID: resp.QueueID, RelativePath: relativePath, Status: "error"})
+		}
+		return err
+	}
+	if p.state != nil {
+		_ = p.state.Put(sourceNZB, ImportedRecord{QueueID: resp.QueueID, RelativePath: item.TargetPath, Status: item.Status})
+	}
+
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
