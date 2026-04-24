@@ -10,12 +10,14 @@ type App struct {
 	cfg             Config
 	altMount        *AltMountClient
 	importProcessor *ImportProcessor
+	queueRunner     *QueueRunner
 }
 
 func NewApp(cfg Config) *App {
 	alt := NewAltMountClient(cfg)
 	proc := NewImportProcessor(cfg, alt)
-	return &App{cfg: cfg, altMount: alt, importProcessor: proc}
+	queue := NewQueueRunner(cfg, proc)
+	return &App{cfg: cfg, altMount: alt, importProcessor: proc, queueRunner: queue}
 }
 
 func (a *App) Run(ctx context.Context) error {
@@ -27,5 +29,5 @@ func (a *App) Run(ctx context.Context) error {
 	if a.cfg.SourceRoot == "" {
 		return errors.New("WINSTON_SOURCE_ROOT is required")
 	}
-	return a.importProcessor.Run(ctx)
+	return a.queueRunner.Run(ctx)
 }
