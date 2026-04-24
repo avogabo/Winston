@@ -25,14 +25,19 @@ func (p *ImportProcessor) Run(ctx context.Context) error {
 }
 
 func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error {
-	relativePath := p.buildRelativePath(sourceNZB)
+	preview := p.BuildPreview(sourceNZB, ItemMetadata{})
+	if p.state != nil {
+		if rec, ok := p.state.Data.Imported[sourceNZB]; ok && rec.Metadata != (ItemMetadata{}) {
+			preview = p.BuildPreview(sourceNZB, rec.Metadata)
+		}
+	}
+	relativePath := preview.ProposedPath
 	if p.state != nil && p.state.Has(sourceNZB) {
 		log.Printf("winston: skipping already imported nzb: %s", sourceNZB)
 		return nil
 	}
 
-	preview := p.BuildPreview(sourceNZB, ItemMetadata{})
-	if preview.State == StateNeedsReview {
+	if preview.State == StateNeedsReview && !(preview.Confidence == ConfidenceMedium && p.cfg.AutoImportMedium) {
 		log.Printf("winston: review required for %s proposed=%s reason=%s", sourceNZB, preview.ProposedPath, preview.Reason)
 		if p.state != nil {
 			_ = p.state.Put(sourceNZB, ImportedRecord{RelativePath: preview.ProposedPath, Status: "review", State: preview.State, Confidence: preview.Confidence, Metadata: preview.Metadata, Preview: preview})
@@ -40,6 +45,9 @@ func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error
 		return nil
 	}
 
+	if p.alt == nil || p.alt.baseURL == "" {
+		return nil
+	}
 	resp, err := p.alt.ImportFile(ctx, ManualImportRequest{
 		FilePath:     sourceNZB,
 		RelativePath: relativePath,

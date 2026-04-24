@@ -65,3 +65,5 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 .success-banner { margin-top: 16px; padding: 12px 14px; border-radius: 16px; background: rgba(59,211,155,.16); color: #13795d; border: 1px solid rgba(59,211,155,.28); }
 .check-row { display: flex; align-items: center; gap: 10px; color: #35506f; }
 @media (max-width: 1100px) { .settings-grid { grid-template-columns: 1fr; } }
+
+.inline-actions { display: flex; gap: 10px; flex-wrap: wrap; }

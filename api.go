@@ -28,13 +28,59 @@ type ApplyCorrectionRequest struct {
 	RelativePathOverride string `json:"relative_path_override,omitempty"`
 }
 
+type ApproveImportRequest struct {
+	Action string `json:"action"`
+}
+
 func (a *App) routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/review/items", a.handleReviewItems)
 	mux.HandleFunc("/api/review/item", a.handleReviewItem)
 	mux.HandleFunc("/api/review/correct", a.handleReviewCorrect)
 	mux.HandleFunc("/api/settings", a.handleSettings)
+	mux.HandleFunc("/api/review/approve", a.handleReviewApprove)
+	mux.HandleFunc("/api/review/import", a.handleReviewImport)
 	return mux
+}
+
+func (a *App) handleReviewApprove(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	source := strings.TrimSpace(r.URL.Query().Get("source"))
+	if source == "" {
+		http.Error(w, "missing source", http.StatusBadRequest)
+		return
+	}
+	preview, err := a.importProcessor.Approve(source)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, preview)
+}
+
+func (a *App) handleReviewImport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	source := strings.TrimSpace(r.URL.Query().Get("source"))
+	if source == "" {
+		http.Error(w, "missing source", http.StatusBadRequest)
+		return
+	}
+	if err := a.importApproved(r.Context(), source); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	item, ok := a.reviewItem(source)
+	if !ok {
+		http.Error(w, "not found after import", http.StatusNotFound)
+		return
+	}
+	writeJSON(w, http.StatusOK, item)
 }
 
 func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
