@@ -27,7 +27,7 @@ func NewApp(cfg Config) *App {
 	queue := NewQueueRunner(cfg, proc)
 	app := &App{cfg: cfg, altMount: alt, importProcessor: proc, queueRunner: queue, state: state, settings: settings, plex: plex}
 	if cfg.HTTPListenAddr != "" {
-		app.apiServer = &http.Server{Addr: cfg.HTTPListenAddr, Handler: app.routes()}
+		app.apiServer = &http.Server{Addr: cfg.HTTPListenAddr, Handler: app.webHandler()}
 	}
 	return app
 }
