@@ -11,13 +11,15 @@ type App struct {
 	altMount        *AltMountClient
 	importProcessor *ImportProcessor
 	queueRunner     *QueueRunner
+	state           *StateStore
 }
 
 func NewApp(cfg Config) *App {
 	alt := NewAltMountClient(cfg)
-	proc := NewImportProcessor(cfg, alt)
+	state, _ := NewStateStore(cfg.SourceRoot)
+	proc := NewImportProcessor(cfg, alt, state)
 	queue := NewQueueRunner(cfg, proc)
-	return &App{cfg: cfg, altMount: alt, importProcessor: proc, queueRunner: queue}
+	return &App{cfg: cfg, altMount: alt, importProcessor: proc, queueRunner: queue, state: state}
 }
 
 func (a *App) Run(ctx context.Context) error {
