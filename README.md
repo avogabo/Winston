@@ -168,6 +168,32 @@ npm run dev
 
 Si sirves el frontend separado en dev, apunta las llamadas al backend de Winston o usa proxy Vite.
 
+### binario único con UI embebida
+
+Si `web/dist` existe al compilar, Winston sirve también la UI desde el mismo puerto HTTP.
+
+```bash
+cd web
+npm install
+npm run build
+cd ..
+go build ./...
+./winston
+```
+
+Abre:
+
+- `http://localhost:8091`
+
+### docker
+
+El `Dockerfile` ya compila backend + frontend y deja la UI embebida en el binario final.
+
+```bash
+docker build -t winston:local .
+docker run --rm -p 8091:8091 --env-file .env -v /ruta/nzb:/data/nzb winston:local
+```
+
 ## Estado actual del MVP
 
 Ya existe base operativa para:
