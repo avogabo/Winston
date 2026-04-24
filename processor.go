@@ -9,11 +9,12 @@ import (
 type ImportProcessor struct {
 	cfg   Config
 	alt   *AltMountClient
+	plex  *PlexClient
 	state *StateStore
 }
 
-func NewImportProcessor(cfg Config, alt *AltMountClient, state *StateStore) *ImportProcessor {
-	return &ImportProcessor{cfg: cfg, alt: alt, state: state}
+func NewImportProcessor(cfg Config, alt *AltMountClient, plex *PlexClient, state *StateStore) *ImportProcessor {
+	return &ImportProcessor{cfg: cfg, alt: alt, plex: plex, state: state}
 }
 
 func (p *ImportProcessor) Run(ctx context.Context) error {
@@ -59,6 +60,9 @@ func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error
 	}
 	if p.state != nil {
 		_ = p.state.Put(sourceNZB, ImportedRecord{QueueID: resp.QueueID, RelativePath: item.TargetPath, Status: item.Status, State: StateImported, Confidence: preview.Confidence, Metadata: preview.Metadata, Preview: preview})
+	}
+	if p.plex != nil {
+		_ = p.plex.RefreshPath(item.TargetPath)
 	}
 
 	select {

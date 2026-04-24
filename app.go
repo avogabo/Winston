@@ -12,14 +12,16 @@ type App struct {
 	importProcessor *ImportProcessor
 	queueRunner     *QueueRunner
 	state           *StateStore
+	plex            *PlexClient
 }
 
 func NewApp(cfg Config) *App {
 	alt := NewAltMountClient(cfg)
+	plex := NewPlexClient(cfg)
 	state, _ := NewStateStore(cfg.SourceRoot)
-	proc := NewImportProcessor(cfg, alt, state)
+	proc := NewImportProcessor(cfg, alt, plex, state)
 	queue := NewQueueRunner(cfg, proc)
-	return &App{cfg: cfg, altMount: alt, importProcessor: proc, queueRunner: queue, state: state}
+	return &App{cfg: cfg, altMount: alt, importProcessor: proc, queueRunner: queue, state: state, plex: plex}
 }
 
 func (a *App) Run(ctx context.Context) error {
