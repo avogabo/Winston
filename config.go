@@ -6,6 +6,7 @@ import (
 )
 
 type Config struct {
+	HTTPListenAddr      string
 	AltMountBaseURL     string
 	AltMountAPIKey      string
 	PlexBaseURL         string
@@ -33,6 +34,7 @@ func LoadConfig() Config {
 	mode := getenv("WINSTON_DEFAULT_MODE", "preserve")
 
 	return Config{
+		HTTPListenAddr:      getenv("WINSTON_HTTP_LISTEN_ADDR", ":8091"),
 		AltMountBaseURL:     os.Getenv("WINSTON_ALTMOUNT_BASE_URL"),
 		AltMountAPIKey:      os.Getenv("WINSTON_ALTMOUNT_API_KEY"),
 		PlexBaseURL:         os.Getenv("WINSTON_PLEX_BASE_URL"),

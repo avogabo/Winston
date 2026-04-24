@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"net/http"
 )
 
 type App struct {
@@ -13,6 +14,7 @@ type App struct {
 	queueRunner     *QueueRunner
 	state           *StateStore
 	plex            *PlexClient
+	apiServer       *http.Server
 }
 
 func NewApp(cfg Config) *App {
@@ -21,17 +23,29 @@ func NewApp(cfg Config) *App {
 	state, _ := NewStateStore(cfg.SourceRoot)
 	proc := NewImportProcessor(cfg, alt, plex, state)
 	queue := NewQueueRunner(cfg, proc)
-	return &App{cfg: cfg, altMount: alt, importProcessor: proc, queueRunner: queue, state: state, plex: plex}
+	app := &App{cfg: cfg, altMount: alt, importProcessor: proc, queueRunner: queue, state: state, plex: plex}
+	if cfg.HTTPListenAddr != "" {
+		app.apiServer = &http.Server{Addr: cfg.HTTPListenAddr, Handler: app.routes()}
+	}
+	return app
 }
 
 func (a *App) Run(ctx context.Context) error {
+	if a.cfg.SourceRoot == "" {
+		return errors.New("WINSTON_SOURCE_ROOT is required")
+	}
+	if a.apiServer != nil {
+		go func() {
+			log.Printf("winston: api listening on %s", a.cfg.HTTPListenAddr)
+			if err := a.apiServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				log.Printf("winston: api server error: %v", err)
+			}
+		}()
+	}
 	if a.cfg.AltMountBaseURL == "" {
 		log.Printf("winston: WINSTON_ALTMOUNT_BASE_URL is empty, running in dry bootstrap mode")
 		<-ctx.Done()
 		return nil
-	}
-	if a.cfg.SourceRoot == "" {
-		return errors.New("WINSTON_SOURCE_ROOT is required")
 	}
 	return a.queueRunner.Run(ctx)
 }
