@@ -22,23 +22,15 @@ func (p *ImportProcessor) BuildPreview(sourceNZB string, meta ItemMetadata) *Ite
 		preview.Metadata.Title = cleanupTitle(base)
 	}
 
-	if meta.TMDBID > 0 || meta.TVDBID > 0 || meta.IMDBID != "" {
-		preview.Confidence = ConfidenceHigh
-		preview.Reason = "explicit_id"
-	} else if preview.Metadata.Title != "" && preview.Metadata.Year > 0 {
-		preview.Confidence = ConfidenceMedium
-		preview.Reason = "title_year_guess"
-	} else {
-		preview.Confidence = ConfidenceLow
-		preview.Reason = "weak_name_parse"
-	}
+	resolved, confidence, candidates, reason := p.matcher.Resolve(preview.Metadata, sourceNZB)
+	preview.Metadata = resolved
+	preview.Confidence = confidence
+	preview.Reason = reason
+	preview.Candidates = candidates
 
 	preview.ProposedPath = p.buildPathForPreview(sourceNZB, preview)
 	if preview.Confidence == ConfidenceLow {
 		preview.State = StateNeedsReview
-		preview.Candidates = []CandidateMatch{
-			{Label: preview.Metadata.Title, Kind: preview.Kind, TMDBID: preview.Metadata.TMDBID, TVDBID: preview.Metadata.TVDBID, IMDBID: preview.Metadata.IMDBID, Year: preview.Metadata.Year, Reason: "current_guess", Score: 50},
-		}
 	}
 	return preview
 }

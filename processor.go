@@ -7,14 +7,15 @@ import (
 )
 
 type ImportProcessor struct {
-	cfg   Config
-	alt   *AltMountClient
-	plex  *PlexClient
-	state *StateStore
+	cfg     Config
+	alt     *AltMountClient
+	plex    *PlexClient
+	state   *StateStore
+	matcher *Matcher
 }
 
 func NewImportProcessor(cfg Config, alt *AltMountClient, plex *PlexClient, state *StateStore) *ImportProcessor {
-	return &ImportProcessor{cfg: cfg, alt: alt, plex: plex, state: state}
+	return &ImportProcessor{cfg: cfg, alt: alt, plex: plex, state: state, matcher: NewMatcher()}
 }
 
 func (p *ImportProcessor) Run(ctx context.Context) error {
