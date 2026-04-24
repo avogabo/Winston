@@ -1,13 +1,15 @@
 :root {
-  color: #e7ecff;
-  background: #07111f;
+  color: #142033;
+  background: #eef3fb;
   font-family: Inter, system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; background:
-  radial-gradient(circle at top left, rgba(73,118,255,.22), transparent 28%),
-  radial-gradient(circle at top right, rgba(66,214,175,.18), transparent 22%),
-  linear-gradient(180deg, #07111f, #0a1527 45%, #07111f 100%);
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(92, 122, 255, .12), transparent 28%),
+    radial-gradient(circle at top right, rgba(52, 199, 170, .10), transparent 22%),
+    linear-gradient(180deg, #f8fbff, #eef3fb 48%, #e8eef8 100%);
 }
 button, input { font: inherit; }
