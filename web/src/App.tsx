@@ -1,60 +1,140 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertTriangle, CheckCircle2, Film, FolderTree, Search, ShieldCheck, Sparkles, Tv, Wand2 } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Film, FolderTree, LoaderCircle, Search, ShieldCheck, Sparkles, Tv, Wand2 } from 'lucide-react'
 import './app.css'
 
-type ReviewItem = {
-  id: string
-  source: string
+type ItemMetadata = {
+  tmdb_id: number
+  tvdb_id: number
+  imdb_id: string
+  kind: string
   title: string
-  year?: number
-  kind: 'movie' | 'series'
-  confidence: 'high' | 'medium' | 'low'
-  state: 'needs_review' | 'approved' | 'imported'
-  proposedPath: string
-  reason: string
-  candidates: { label: string; year?: number; tmdbId?: number }[]
+  year: number
+  season: number
+  episode: number
+  quality: string
+  relative_path_override: string
 }
 
-const seed: ReviewItem[] = [
-  {
-    id: '1',
-    source: '/nzb/series/el-internado.nzb',
-    title: 'El Internado',
-    year: 2007,
-    kind: 'series',
-    confidence: 'low',
-    state: 'needs_review',
-    proposedPath: 'Series/E/El Internado Las Cumbres (2021)/Temporada 01/El Internado Las Cumbres - 01x01',
-    reason: 'Título ambiguo, varias coincidencias plausibles',
-    candidates: [
-      { label: 'El Internado', year: 2007, tmdbId: 37952 },
-      { label: 'El Internado: Las Cumbres', year: 2021, tmdbId: 112233 },
-    ],
-  },
-  {
-    id: '2',
-    source: '/nzb/pelis/1080/avatar.nzb',
-    title: 'Avatar',
-    year: 2009,
-    kind: 'movie',
-    confidence: 'high',
-    state: 'approved',
-    proposedPath: 'Peliculas/1080/A/Avatar (2009)/Avatar (2009).mkv',
-    reason: 'tmdb_id explícito',
-    candidates: [],
-  },
-]
+type CandidateMatch = {
+  label: string
+  kind: string
+  tmdb_id: number
+  tvdb_id: number
+  imdb_id: string
+  year: number
+  reason: string
+  score: number
+}
+
+type ReviewItem = {
+  source_nzb_path: string
+  state: 'needs_review' | 'approved' | 'imported' | 'corrected' | 'failed' | 'importing'
+  confidence: 'high' | 'medium' | 'low'
+  metadata: ItemMetadata
+  proposed_path: string
+  reason: string
+  candidates: CandidateMatch[]
+  queue_id?: number
+  status?: string
+}
+
+type ReviewListResponse = { items: ReviewItem[] }
 
 export default function App() {
+  const [items, setItems] = useState<ReviewItem[]>([])
   const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState<ReviewItem | null>(seed[0])
+  const [selectedSource, setSelectedSource] = useState('')
+  const [selected, setSelected] = useState<ReviewItem | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [tmdbId, setTmdbId] = useState('')
+  const [pathOverride, setPathOverride] = useState('')
+
+  useEffect(() => {
+    void loadItems()
+  }, [])
+
+  useEffect(() => {
+    if (!selectedSource && items.length > 0) {
+      setSelectedSource(items[0].source_nzb_path)
+    }
+  }, [items, selectedSource])
+
+  useEffect(() => {
+    if (!selectedSource) {
+      setSelected(null)
+      return
+    }
+    void loadItem(selectedSource)
+  }, [selectedSource])
+
+  useEffect(() => {
+    if (!selected) return
+    setTmdbId(selected.metadata.tmdb_id ? String(selected.metadata.tmdb_id) : '')
+    setPathOverride(selected.metadata.relative_path_override || '')
+  }, [selected])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return seed
-    return seed.filter((item) => [item.title, item.source, item.proposedPath, item.reason].join(' ').toLowerCase().includes(q))
-  }, [query])
+    if (!q) return items
+    return items.filter((item) =>
+      [item.metadata.title, item.source_nzb_path, item.proposed_path, item.reason, item.state, item.confidence]
+        .join(' ')
+        .toLowerCase()
+        .includes(q),
+    )
+  }, [items, query])
+
+  async function loadItems() {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/review/items')
+      if (!res.ok) throw new Error('No pude cargar la lista')
+      const data: ReviewListResponse = await res.json()
+      setItems(data.items)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error cargando items')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function loadItem(source: string) {
+    try {
+      const res = await fetch(`/api/review/item?source=${encodeURIComponent(source)}`)
+      if (!res.ok) throw new Error('No pude cargar el detalle')
+      const data: ReviewItem = await res.json()
+      setSelected(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error cargando detalle')
+    }
+  }
+
+  async function applyCorrection(payload: Record<string, unknown>) {
+    if (!selected) return
+    setSaving(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/review/correct?source=${encodeURIComponent(selected.source_nzb_path)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) throw new Error(await res.text())
+      await loadItems()
+      await loadItem(selected.source_nzb_path)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No pude aplicar la corrección')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const reviewCount = items.filter((item) => item.state === 'needs_review').length
+  const approvedCount = items.filter((item) => item.state === 'approved' || item.state === 'corrected').length
 
   return (
     <div className="app-shell">
@@ -63,13 +143,10 @@ export default function App() {
         <div className="hero-copy">
           <span className="badge"><Sparkles size={14} /> Winston Review Center</span>
           <h1>Preview, corrección y control antes de publicar en AltMount</h1>
-          <p>
-            Winston autoimporta cuando está claro, frena cuando duda y te deja corregir por TMDB ID,
-            candidato o path final.
-          </p>
+          <p>Winston autoimporta cuando está claro, frena cuando duda y te deja corregir por TMDB ID o path final.</p>
           <div className="hero-stats">
-            <Stat icon={<AlertTriangle size={16} />} label="en revisión" value="1" />
-            <Stat icon={<CheckCircle2 size={16} />} label="aprobados" value="1" />
+            <Stat icon={<AlertTriangle size={16} />} label="en revisión" value={String(reviewCount)} />
+            <Stat icon={<CheckCircle2 size={16} />} label="aprobados/corregidos" value={String(approvedCount)} />
             <Stat icon={<ShieldCheck size={16} />} label="NZBs borrados" value="0" />
           </div>
         </div>
@@ -82,75 +159,85 @@ export default function App() {
         </div>
       </section>
 
+      {error && <div className="error-banner">{error}</div>}
+
       <section className="layout">
         <div className="list-panel glass">
           <div className="panel-head">
             <h2>Items</h2>
-            <span>{filtered.length} visibles</span>
+            <span>{loading ? 'cargando...' : `${filtered.length} visibles`}</span>
           </div>
           <div className="review-list">
-            {filtered.map((item) => (
-              <button key={item.id} className={`review-row ${selected?.id === item.id ? 'active' : ''}`} onClick={() => setSelected(item)}>
-                <div className="review-row-top">
-                  <span className={`pill ${item.state}`}>{item.state}</span>
-                  <span className={`pill confidence ${item.confidence}`}>{item.confidence}</span>
-                </div>
-                <div className="review-title">
-                  {item.kind === 'series' ? <Tv size={16} /> : <Film size={16} />}
-                  <strong>{item.title}</strong>
-                </div>
-                <div className="review-source"><FolderTree size={14} /> {item.source}</div>
-              </button>
-            ))}
+            {loading ? (
+              <div className="empty-state"><LoaderCircle className="spin" size={18} /> Cargando items...</div>
+            ) : filtered.length === 0 ? (
+              <div className="empty-state">No hay items todavía en el estado de Winston.</div>
+            ) : (
+              filtered.map((item) => (
+                <button key={item.source_nzb_path} className={`review-row ${selectedSource === item.source_nzb_path ? 'active' : ''}`} onClick={() => setSelectedSource(item.source_nzb_path)}>
+                  <div className="review-row-top">
+                    <span className={`pill ${item.state}`}>{item.state}</span>
+                    <span className={`pill confidence ${item.confidence}`}>{item.confidence}</span>
+                  </div>
+                  <div className="review-title">
+                    {item.metadata.kind === 'series' ? <Tv size={16} /> : <Film size={16} />}
+                    <strong>{item.metadata.title || item.source_nzb_path.split('/').pop()}</strong>
+                  </div>
+                  <div className="review-source"><FolderTree size={14} /> {item.source_nzb_path}</div>
+                </button>
+              ))
+            )}
           </div>
         </div>
 
         <AnimatePresence mode="wait">
           {selected && (
-            <motion.div key={selected.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -14 }} className="detail-panel glass">
+            <motion.div key={selected.source_nzb_path} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -14 }} className="detail-panel glass">
               <div className="panel-head detail-head">
                 <div>
-                  <h2>{selected.title}</h2>
-                  <p>{selected.reason}</p>
+                  <h2>{selected.metadata.title || selected.source_nzb_path.split('/').pop()}</h2>
+                  <p>{selected.reason || 'Sin motivo calculado todavía'}</p>
                 </div>
-                <button className="primary-btn"><Wand2 size={16} /> Recalcular</button>
+                <button className="primary-btn" onClick={() => void loadItem(selected.source_nzb_path)}><Wand2 size={16} /> Recargar</button>
               </div>
 
               <div className="grid-two">
                 <Card title="Preview actual">
-                  <PreviewRow label="Origen" value={selected.source} />
-                  <PreviewRow label="Tipo" value={selected.kind} />
-                  <PreviewRow label="Confianza" value={selected.confidence} />
-                  <PreviewRow label="Ruta propuesta" value={selected.proposedPath} />
+                  <PreviewRow label="Origen" value={selected.source_nzb_path} />
+                  <PreviewRow label="Tipo" value={selected.metadata.kind || '-'} />
+                  <PreviewRow label="Confianza" value={selected.confidence || '-'} />
+                  <PreviewRow label="Ruta propuesta" value={selected.proposed_path || '-'} />
                 </Card>
 
                 <Card title="Corrección rápida">
                   <label className="field">
                     <span>TMDB ID</span>
-                    <input placeholder="37952" />
+                    <input value={tmdbId} onChange={(e) => setTmdbId(e.target.value)} placeholder="37952" />
                   </label>
+                  <button className="secondary-btn" disabled={saving || !tmdbId.trim()} onClick={() => void applyCorrection({ tmdb_id: Number(tmdbId) })}>
+                    {saving ? 'Aplicando...' : 'Aplicar TMDB ID'}
+                  </button>
                   <label className="field">
                     <span>Path override</span>
-                    <input placeholder="Series/E/El Internado (2007)/Temporada 01/..." />
+                    <input value={pathOverride} onChange={(e) => setPathOverride(e.target.value)} placeholder="Series/E/El Internado (2007)/Temporada 01/..." />
                   </label>
-                  <div className="actions-row">
-                    <button className="secondary-btn">Aplicar corrección</button>
-                    <button className="ghost-btn">Aprobar e importar</button>
-                  </div>
+                  <button className="ghost-btn" disabled={saving || !pathOverride.trim()} onClick={() => void applyCorrection({ relative_path_override: pathOverride })}>
+                    {saving ? 'Aplicando...' : 'Aplicar path override'}
+                  </button>
                 </Card>
               </div>
 
               <Card title="Coincidencias sugeridas">
                 <div className="candidate-list">
-                  {selected.candidates.map((candidate) => (
-                    <button key={`${candidate.label}-${candidate.tmdbId}`} className="candidate-row">
+                  {selected.candidates?.length ? selected.candidates.map((candidate) => (
+                    <button key={`${candidate.label}-${candidate.tmdb_id}-${candidate.year}`} className="candidate-row" onClick={() => candidate.tmdb_id && void applyCorrection({ tmdb_id: candidate.tmdb_id })}>
                       <div>
                         <strong>{candidate.label}</strong>
-                        <span>{candidate.year ?? 's/f'} · tmdb {candidate.tmdbId ?? '-'}</span>
+                        <span>{candidate.year || 's/f'} · tmdb {candidate.tmdb_id || '-'} · {candidate.reason}</span>
                       </div>
                       <span className="ghost-btn compact">Elegir</span>
                     </button>
-                  ))}
+                  )) : <div className="empty-state">No hay candidatos alternativos para este item.</div>}
                 </div>
               </Card>
             </motion.div>
