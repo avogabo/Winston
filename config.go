@@ -21,6 +21,7 @@ type Config struct {
 	PlexPathFrom        string
 	PlexPathTo          string
 	SleepBetweenImports time.Duration
+	AutoImportMedium    bool
 }
 
 func LoadConfig() Config {
@@ -32,6 +33,7 @@ func LoadConfig() Config {
 	}
 
 	mode := getenv("WINSTON_DEFAULT_MODE", "preserve")
+	autoImportMedium := getenv("WINSTON_AUTOIMPORT_MEDIUM", "true") != "false"
 
 	return Config{
 		HTTPListenAddr:      getenv("WINSTON_HTTP_LISTEN_ADDR", ":8091"),
@@ -49,6 +51,7 @@ func LoadConfig() Config {
 		PlexPathFrom:        getenv("WINSTON_PLEX_PATH_FROM", ""),
 		PlexPathTo:          getenv("WINSTON_PLEX_PATH_TO", ""),
 		SleepBetweenImports: sleep,
+		AutoImportMedium:    autoImportMedium,
 	}
 }
 

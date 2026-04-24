@@ -13,6 +13,7 @@ type App struct {
 	importProcessor *ImportProcessor
 	queueRunner     *QueueRunner
 	state           *StateStore
+	settings        *SettingsStore
 	plex            *PlexClient
 	apiServer       *http.Server
 }
@@ -21,9 +22,10 @@ func NewApp(cfg Config) *App {
 	alt := NewAltMountClient(cfg)
 	plex := NewPlexClient(cfg)
 	state, _ := NewStateStore(cfg.SourceRoot)
+	settings, _ := NewSettingsStore(cfg.SourceRoot, cfg)
 	proc := NewImportProcessor(cfg, alt, plex, state)
 	queue := NewQueueRunner(cfg, proc)
-	app := &App{cfg: cfg, altMount: alt, importProcessor: proc, queueRunner: queue, state: state, plex: plex}
+	app := &App{cfg: cfg, altMount: alt, importProcessor: proc, queueRunner: queue, state: state, settings: settings, plex: plex}
 	if cfg.HTTPListenAddr != "" {
 		app.apiServer = &http.Server{Addr: cfg.HTTPListenAddr, Handler: app.routes()}
 	}

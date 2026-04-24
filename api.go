@@ -33,7 +33,32 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("/api/review/items", a.handleReviewItems)
 	mux.HandleFunc("/api/review/item", a.handleReviewItem)
 	mux.HandleFunc("/api/review/correct", a.handleReviewCorrect)
+	mux.HandleFunc("/api/settings", a.handleSettings)
 	return mux
+}
+
+func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
+	if a.settings == nil {
+		http.Error(w, "settings store unavailable", http.StatusInternalServerError)
+		return
+	}
+	switch r.Method {
+	case http.MethodGet:
+		writeJSON(w, http.StatusOK, a.settings.Get())
+	case http.MethodPost:
+		var req Settings
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "invalid json", http.StatusBadRequest)
+			return
+		}
+		if err := a.settings.Put(req); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, http.StatusOK, req)
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
 }
 
 func (a *App) handleReviewItems(w http.ResponseWriter, r *http.Request) {
