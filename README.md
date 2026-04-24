@@ -85,3 +85,16 @@ Si viene `tmdb_id`, Winston debe priorizarlo como pista fuerte para el naming fi
 - política de borrado NZB: inexistente
 - política de import: secuencial y conservadora
 - naming inicial: `preserve` para conservar el árbol relativo del origen NZB
+
+## Reglas de revisión y corrección
+
+Winston no debe pedir confirmación para todo.
+
+- Si el match es claro, importa automáticamente.
+- Si el match es dudoso, deja preview y pasa a revisión.
+- Si un item ya importado quedó mal identificado, debe poder corregirse después y volver a publicarse correctamente.
+
+Esto convierte a Winston en un sistema:
+- automático cuando hay confianza,
+- prudente cuando hay ambigüedad,
+- corregible tras importación.
