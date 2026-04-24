@@ -38,6 +38,24 @@ Winston trabaja en modo secuencial para no saturar AltMount:
 }
 ```
 
+
+## Metadata prevista por item
+
+Winston debe poder trabajar con metadata explícita por item, no solo deducida del nombre:
+
+- `tmdb_id`
+- `tvdb_id`
+- `imdb_id`
+- `kind` (`movie|series|episode|auto`)
+- `title`
+- `year`
+- `season`
+- `episode`
+- `quality`
+- `relative_path_override`
+
+Si viene `tmdb_id`, Winston debe priorizarlo como pista fuerte para el naming final y para FileBot cuando aplique.
+
 ## MVP previsto
 
 - cola interna secuencial

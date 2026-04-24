@@ -14,6 +14,9 @@ type Config struct {
 	DefaultMode         string
 	MoviesTemplate      string
 	SeriesTemplate      string
+	FileBotMovieFormat  string
+	FileBotSeriesFormat string
+	FileBotDB           string
 	SleepBetweenImports time.Duration
 }
 
@@ -36,6 +39,9 @@ func LoadConfig() Config {
 		DefaultMode:         mode,
 		MoviesTemplate:      getenv("WINSTON_MOVIES_TEMPLATE", "Peliculas/{quality}/{alpha}/{title} ({year})"),
 		SeriesTemplate:      getenv("WINSTON_SERIES_TEMPLATE", "Series/{alpha}/{series}/Temporada {season}/{series} - {episode}"),
+		FileBotMovieFormat:  getenv("WINSTON_FILEBOT_FORMAT_MOVIE", "Peliculas/{plex}"),
+		FileBotSeriesFormat: getenv("WINSTON_FILEBOT_FORMAT_SERIES", "Series/{plex}"),
+		FileBotDB:           getenv("WINSTON_FILEBOT_DB", "TheMovieDB"),
 		SleepBetweenImports: sleep,
 	}
 }

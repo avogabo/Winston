@@ -18,9 +18,10 @@ type StateData struct {
 }
 
 type ImportedRecord struct {
-	QueueID      int    `json:"queue_id"`
-	RelativePath string `json:"relative_path"`
-	Status       string `json:"status"`
+	QueueID      int          `json:"queue_id"`
+	RelativePath string       `json:"relative_path"`
+	Status       string       `json:"status"`
+	Metadata     ItemMetadata `json:"metadata"`
 }
 
 func NewStateStore(root string) (*StateStore, error) {
