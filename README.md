@@ -98,3 +98,17 @@ Esto convierte a Winston en un sistema:
 - automático cuando hay confianza,
 - prudente cuando hay ambigüedad,
 - corregible tras importación.
+
+## Plex path mapping
+
+Si AltMount/Winston y Plex no ven la misma ruta física, Winston debe traducir la ruta antes del refresh selectivo.
+
+Ejemplo:
+
+- AltMount: `/home/Peliculas/1080/A/Avatar (2009).mkv`
+- Plex: `/media/biblioteca/Peliculas/1080/A/Avatar (2009).mkv`
+
+Variables:
+
+- `WINSTON_PLEX_PATH_FROM`
+- `WINSTON_PLEX_PATH_TO`

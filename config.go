@@ -17,6 +17,8 @@ type Config struct {
 	FileBotMovieFormat  string
 	FileBotSeriesFormat string
 	FileBotDB           string
+	PlexPathFrom        string
+	PlexPathTo          string
 	SleepBetweenImports time.Duration
 }
 
@@ -42,6 +44,8 @@ func LoadConfig() Config {
 		FileBotMovieFormat:  getenv("WINSTON_FILEBOT_FORMAT_MOVIE", "Peliculas/{plex}"),
 		FileBotSeriesFormat: getenv("WINSTON_FILEBOT_FORMAT_SERIES", "Series/{plex}"),
 		FileBotDB:           getenv("WINSTON_FILEBOT_DB", "TheMovieDB"),
+		PlexPathFrom:        getenv("WINSTON_PLEX_PATH_FROM", ""),
+		PlexPathTo:          getenv("WINSTON_PLEX_PATH_TO", ""),
 		SleepBetweenImports: sleep,
 	}
 }
