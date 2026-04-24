@@ -12,10 +12,11 @@ type ImportProcessor struct {
 	plex    *PlexClient
 	state   *StateStore
 	matcher *Matcher
+	filebot *FileBotClient
 }
 
 func NewImportProcessor(cfg Config, alt *AltMountClient, plex *PlexClient, state *StateStore) *ImportProcessor {
-	return &ImportProcessor{cfg: cfg, alt: alt, plex: plex, state: state, matcher: NewMatcher()}
+	return &ImportProcessor{cfg: cfg, alt: alt, plex: plex, state: state, matcher: NewMatcher(), filebot: NewFileBotClient(cfg)}
 }
 
 func (p *ImportProcessor) Run(ctx context.Context) error {

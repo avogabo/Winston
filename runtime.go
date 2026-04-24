@@ -61,6 +61,7 @@ func (p *ImportProcessor) applyRuntimeConfig(cfg Config) {
 	p.cfg = cfg
 	p.alt = NewAltMountClient(cfg)
 	p.plex = NewPlexClient(cfg)
+	p.filebot = NewFileBotClient(cfg)
 }
 
 func (a *App) importApproved(ctx context.Context, source string) error {

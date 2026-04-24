@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"path/filepath"
 	"strings"
 )
@@ -38,6 +39,11 @@ func (p *ImportProcessor) BuildPreview(sourceNZB string, meta ItemMetadata) *Ite
 func (p *ImportProcessor) buildPathForPreview(sourceNZB string, preview *ItemPreview) string {
 	if preview.Metadata.RelativePathOverride != "" {
 		return preview.Metadata.RelativePathOverride
+	}
+	if p.filebot != nil && p.filebot.Enabled() {
+		if resolved, _, err := p.filebot.Resolve(context.Background(), sourceNZB, preview.Metadata); err == nil && strings.TrimSpace(resolved) != "" {
+			return resolved
+		}
 	}
 	return p.buildRelativePath(sourceNZB)
 }

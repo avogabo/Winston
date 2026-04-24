@@ -212,3 +212,21 @@ Ya existe base operativa para:
 - decidir corrección post-import avanzada si AltMount requiere reimport/republicación especial
 - dejar servido el build de `web/dist` desde el binario o contenedor final
 - validar con NZBs reales y AltMount real
+
+## FileBot (estado actual)
+
+Winston ya tiene una primera integración funcional de modo `filebot` para resolver `proposed_path` a partir de los formatos configurados.
+
+Importante:
+
+- todavía no es una integración completa con lookup rico real de FileBot
+- de momento usa metadata disponible en Winston y aplica los formatos configurados
+- sigue siendo obligatorio persistir `FILEBOT_HOME=/config/filebot` en volumen persistente para no romper licencias
+
+Variables relevantes:
+
+- `WINSTON_DEFAULT_MODE=filebot`
+- `WINSTON_FILEBOT_FORMAT_MOVIE`
+- `WINSTON_FILEBOT_FORMAT_SERIES`
+- `WINSTON_FILEBOT_DB`
+- `FILEBOT_HOME=/config/filebot`
