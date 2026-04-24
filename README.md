@@ -43,6 +43,7 @@ Winston trabaja en modo secuencial para no saturar AltMount:
 - cola interna secuencial
 - cliente API para AltMount
 - generador de `relative_path`
+  - modo inicial `preserve`: conserva árbol relativo de la carpeta NZB
 - cliente básico para Plex
 - almacenamiento local simple para estado
 - Docker listo para despliegue en Unraid
@@ -65,3 +66,4 @@ Winston trabaja en modo secuencial para no saturar AltMount:
 - sleep entre imports: `3s`
 - política de borrado NZB: inexistente
 - política de import: secuencial y conservadora
+- naming inicial: `preserve` para conservar el árbol relativo del origen NZB

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"path/filepath"
 	"time"
 )
 
@@ -59,10 +58,4 @@ func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error
 	case <-time.After(p.cfg.SleepBetweenImports):
 		return nil
 	}
-}
-
-func (p *ImportProcessor) buildRelativePath(sourceNZB string) string {
-	base := filepath.Base(sourceNZB)
-	name := base[:len(base)-len(filepath.Ext(base))]
-	return filepath.ToSlash(filepath.Join("pending", name))
 }
