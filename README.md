@@ -112,3 +112,77 @@ Variables:
 
 - `WINSTON_PLEX_PATH_FROM`
 - `WINSTON_PLEX_PATH_TO`
+
+## UI y API de revisión
+
+Winston ya incluye una base de UI moderna en `web/` y una API HTTP mínima para operar revisión y ajustes.
+
+### API disponible
+
+- `GET /api/review/items`
+- `GET /api/review/item?source=...`
+- `POST /api/review/correct?source=...`
+- `POST /api/review/approve?source=...`
+- `POST /api/review/import?source=...`
+- `GET /api/settings`
+- `POST /api/settings`
+
+### Ajustes persistentes
+
+La UI guarda configuración en `WINSTON_SOURCE_ROOT/.winston-settings.json`.
+
+Esa configuración ya puede afectar al runtime para:
+
+- AltMount
+- Plex
+- path mapping Plex
+- `sleep_between_imports`
+- `default_mode`
+- templates
+- FileBot formats
+- política `auto_import_medium`
+
+## Lanzar y probar local
+
+### backend
+
+```bash
+go build ./...
+cp .env.example .env
+# editar valores reales
+set -a; source .env; set +a
+./winston
+```
+
+Por defecto la API escucha en:
+
+- `http://localhost:8091`
+
+### frontend
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Si sirves el frontend separado en dev, apunta las llamadas al backend de Winston o usa proxy Vite.
+
+## Estado actual del MVP
+
+Ya existe base operativa para:
+
+- revisión de items
+- corrección por `tmdb_id`
+- corrección por `relative_path_override`
+- aprobar desde UI
+- importar desde UI
+- ajustes persistentes desde UI
+
+## Pendiente antes de llamar esto “cerrado”
+
+- integrar matching más fuerte que el parse básico del nombre
+- soportar elección de candidato con update de metadata más rica
+- decidir corrección post-import avanzada si AltMount requiere reimport/republicación especial
+- dejar servido el build de `web/dist` desde el binario o contenedor final
+- validar con NZBs reales y AltMount real
