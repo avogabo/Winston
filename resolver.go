@@ -32,6 +32,8 @@ func (p *ImportProcessor) BuildPreview(sourceNZB string, meta ItemMetadata) *Ite
 	preview.ProposedPath = p.buildPathForPreview(sourceNZB, preview)
 	if preview.Confidence == ConfidenceLow {
 		preview.State = StateNeedsReview
+	} else {
+		preview.State = StateApproved
 	}
 	return preview
 }
@@ -41,8 +43,8 @@ func (p *ImportProcessor) buildPathForPreview(sourceNZB string, preview *ItemPre
 		return preview.Metadata.RelativePathOverride
 	}
 	if p.filebot != nil && p.filebot.Enabled() {
-		if resolved, _, err := p.filebot.Resolve(context.Background(), sourceNZB, preview.Metadata); err == nil && strings.TrimSpace(resolved) != "" {
-			return resolved
+		if resolved, err := p.filebot.Resolve(context.Background(), sourceNZB, preview.Metadata); err == nil && resolved != nil && strings.TrimSpace(resolved.RelativePath) != "" {
+			return resolved.RelativePath
 		}
 	}
 	return p.buildRelativePath(sourceNZB)
