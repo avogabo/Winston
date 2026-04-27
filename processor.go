@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"log"
+	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -50,7 +52,7 @@ func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error
 		return nil
 	}
 	resp, err := p.alt.ImportFile(ctx, ManualImportRequest{
-		FilePath:     sourceNZB,
+		FilePath:     p.altMountFilePath(sourceNZB),
 		RelativePath: relativePath,
 	})
 	if err != nil {
@@ -81,4 +83,24 @@ func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error
 	case <-time.After(p.cfg.SleepBetweenImports):
 		return nil
 	}
+}
+
+func (p *ImportProcessor) altMountFilePath(sourceNZB string) string {
+	from := strings.TrimSpace(p.cfg.AltMountPathFrom)
+	to := strings.TrimSpace(p.cfg.AltMountPathTo)
+	if from == "" || to == "" {
+		return sourceNZB
+	}
+
+	cleanSource := filepath.Clean(sourceNZB)
+	cleanFrom := filepath.Clean(from)
+	cleanTo := filepath.Clean(to)
+
+	if cleanSource == cleanFrom {
+		return cleanTo
+	}
+	if rel, err := filepath.Rel(cleanFrom, cleanSource); err == nil && rel != "." && !strings.HasPrefix(rel, "..") {
+		return filepath.ToSlash(filepath.Join(cleanTo, rel))
+	}
+	return sourceNZB
 }
