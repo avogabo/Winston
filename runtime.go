@@ -11,7 +11,10 @@ func (a *App) effectiveConfig() Config {
 	if a.settings == nil {
 		return cfg
 	}
-	s := a.settings.Get()
+	return applySettingsToConfig(cfg, a.settings.Get())
+}
+
+func applySettingsToConfig(cfg Config, s Settings) Config {
 	if s.AltMountBaseURL != "" {
 		cfg.AltMountBaseURL = s.AltMountBaseURL
 	}

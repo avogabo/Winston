@@ -23,6 +23,9 @@ func NewApp(cfg Config) *App {
 	plex := NewPlexClient(cfg)
 	state, _ := NewStateStore(cfg.SourceRoot)
 	settings, _ := NewSettingsStore(cfg.SourceRoot, cfg)
+	if settings != nil {
+		cfg = applySettingsToConfig(cfg, settings.Get())
+	}
 	proc := NewImportProcessor(cfg, alt, plex, state)
 	queue := NewQueueRunner(cfg, proc)
 	app := &App{cfg: cfg, altMount: alt, importProcessor: proc, queueRunner: queue, state: state, settings: settings, plex: plex}
