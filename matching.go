@@ -14,6 +14,8 @@ func NewMatcher() *Matcher { return &Matcher{} }
 var (
 	reEpisodeA = regexp.MustCompile(`(?i)^(?P<title>.+?)\s*\((?P<year>\d{4})\)\s*(?P<season>\d{1,2})x(?P<episode>\d{1,2})$`)
 	reEpisodeB = regexp.MustCompile(`(?i)^(?P<title>.+?)\s*[. _-]*S(?P<season>\d{1,2})E(?P<episode>\d{1,2})(?:\s*\((?P<year>\d{4})\))?$`)
+	reSeasonA  = regexp.MustCompile(`(?i)^(?P<title>.+?)\s*\((?P<year>\d{4})\)\s*Temporada\s*(?P<season>\d{1,2})$`)
+	reSeasonB  = regexp.MustCompile(`(?i)^(?P<title>.+?)\s*\((?P<year>\d{4})\)\s*Season\s*(?P<season>\d{1,2})$`)
 	reMovie    = regexp.MustCompile(`(?i)^(?P<title>.+?)\s*\((?P<year>\d{4})\)$`)
 )
 
@@ -30,14 +32,20 @@ func (m *Matcher) Resolve(meta ItemMetadata, sourceNZB string) (ItemMetadata, Ma
 
 	base := cleanupTitle(strings.TrimSuffix(filepathBase(sourceNZB), filepathExt(sourceNZB)))
 	if parsed, ok := parseStructuredName(base, meta); ok {
+		reason := "title_year_episode_parse"
+		score := 78
+		if parsed.Kind == "series" && parsed.Season > 0 && parsed.Episode == 0 {
+			reason = "title_year_season_parse"
+			score = 74
+		}
 		candidates := []CandidateMatch{{
 			Label:  parsed.Title,
 			Kind:   normalizeKind(parsed.Kind),
 			Year:   parsed.Year,
-			Reason: "title_year_episode_parse",
-			Score:  78,
+			Reason: reason,
+			Score:  score,
 		}}
-		return parsed, ConfidenceMedium, candidates, "title_year_episode_parse"
+		return parsed, ConfidenceMedium, candidates, reason
 	}
 
 	meta.Title = base
@@ -52,6 +60,30 @@ func parseStructuredName(base string, meta ItemMetadata) (ItemMetadata, bool) {
 	}
 	if out, ok := parseMoviePattern(base, meta); ok {
 		return out, true
+	}
+	if out, ok := parseSeasonPattern(base, meta); ok {
+		return out, true
+	}
+	return meta, false
+}
+
+func parseSeasonPattern(base string, meta ItemMetadata) (ItemMetadata, bool) {
+	for _, re := range []*regexp.Regexp{reSeasonA, reSeasonB} {
+		match := re.FindStringSubmatch(base)
+		if match == nil {
+			continue
+		}
+		groups := map[string]string{}
+		for i, name := range re.SubexpNames() {
+			if i > 0 && name != "" {
+				groups[name] = strings.TrimSpace(match[i])
+			}
+		}
+		meta.Title = cleanupTitle(groups["title"])
+		meta.Kind = "series"
+		meta.Year = parseIntOr(groups["year"], meta.Year)
+		meta.Season = parseIntOr(groups["season"], meta.Season)
+		return meta, meta.Title != "" && meta.Year > 0 && meta.Season > 0
 	}
 	return meta, false
 }
