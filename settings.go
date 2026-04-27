@@ -30,6 +30,7 @@ type Settings struct {
 	FileBotSeriesFormat string `json:"filebot_series_format"`
 	FileBotDB           string `json:"filebot_db"`
 	FileBotBinary       string `json:"filebot_binary"`
+	FileBotHome         string `json:"filebot_home"`
 	AutoImportMedium    bool   `json:"auto_import_medium"`
 }
 
@@ -52,6 +53,7 @@ func NewSettingsStore(root string, cfg Config) (*SettingsStore, error) {
 		FileBotSeriesFormat: cfg.FileBotSeriesFormat,
 		FileBotDB:           cfg.FileBotDB,
 		FileBotBinary:       cfg.FileBotBinary,
+		FileBotHome:         cfg.FileBotHome,
 		AutoImportMedium:    cfg.AutoImportMedium,
 	}}
 	b, err := os.ReadFile(path)

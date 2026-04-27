@@ -60,6 +60,9 @@ func applySettingsToConfig(cfg Config, s Settings) Config {
 	if s.FileBotBinary != "" {
 		cfg.FileBotBinary = s.FileBotBinary
 	}
+	if s.FileBotHome != "" {
+		cfg.FileBotHome = s.FileBotHome
+	}
 	if s.SleepBetweenImports != "" {
 		if d, err := time.ParseDuration(s.SleepBetweenImports); err == nil {
 			cfg.SleepBetweenImports = d

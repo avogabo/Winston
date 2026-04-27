@@ -38,9 +38,20 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("/api/review/item", a.handleReviewItem)
 	mux.HandleFunc("/api/review/correct", a.handleReviewCorrect)
 	mux.HandleFunc("/api/settings", a.handleSettings)
+	mux.HandleFunc("/api/filebot/status", a.handleFileBotStatus)
 	mux.HandleFunc("/api/review/approve", a.handleReviewApprove)
 	mux.HandleFunc("/api/review/import", a.handleReviewImport)
 	return mux
+}
+
+func (a *App) handleFileBotStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	cfg := a.effectiveConfig()
+	status := NewFileBotClient(cfg).Status(r.Context())
+	writeJSON(w, http.StatusOK, status)
 }
 
 func (a *App) handleReviewApprove(w http.ResponseWriter, r *http.Request) {
