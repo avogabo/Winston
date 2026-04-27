@@ -16,6 +16,8 @@ type SettingsStore struct {
 type Settings struct {
 	AltMountBaseURL     string `json:"altmount_base_url"`
 	AltMountAPIKey      string `json:"altmount_api_key"`
+	AltMountPathFrom    string `json:"altmount_path_from"`
+	AltMountPathTo      string `json:"altmount_path_to"`
 	PlexBaseURL         string `json:"plex_base_url"`
 	PlexToken           string `json:"plex_token"`
 	PlexPathFrom        string `json:"plex_path_from"`
@@ -27,6 +29,7 @@ type Settings struct {
 	FileBotMovieFormat  string `json:"filebot_movie_format"`
 	FileBotSeriesFormat string `json:"filebot_series_format"`
 	FileBotDB           string `json:"filebot_db"`
+	FileBotBinary       string `json:"filebot_binary"`
 	AutoImportMedium    bool   `json:"auto_import_medium"`
 }
 
@@ -35,6 +38,8 @@ func NewSettingsStore(root string, cfg Config) (*SettingsStore, error) {
 	s := &SettingsStore{path: path, data: Settings{
 		AltMountBaseURL:     cfg.AltMountBaseURL,
 		AltMountAPIKey:      cfg.AltMountAPIKey,
+		AltMountPathFrom:    cfg.AltMountPathFrom,
+		AltMountPathTo:      cfg.AltMountPathTo,
 		PlexBaseURL:         cfg.PlexBaseURL,
 		PlexToken:           cfg.PlexToken,
 		PlexPathFrom:        cfg.PlexPathFrom,
@@ -46,6 +51,7 @@ func NewSettingsStore(root string, cfg Config) (*SettingsStore, error) {
 		FileBotMovieFormat:  cfg.FileBotMovieFormat,
 		FileBotSeriesFormat: cfg.FileBotSeriesFormat,
 		FileBotDB:           cfg.FileBotDB,
+		FileBotBinary:       cfg.FileBotBinary,
 		AutoImportMedium:    cfg.AutoImportMedium,
 	}}
 	b, err := os.ReadFile(path)

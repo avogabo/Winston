@@ -18,6 +18,12 @@ func (a *App) effectiveConfig() Config {
 	if s.AltMountAPIKey != "" {
 		cfg.AltMountAPIKey = s.AltMountAPIKey
 	}
+	if s.AltMountPathFrom != "" {
+		cfg.AltMountPathFrom = s.AltMountPathFrom
+	}
+	if s.AltMountPathTo != "" {
+		cfg.AltMountPathTo = s.AltMountPathTo
+	}
 	if s.PlexBaseURL != "" {
 		cfg.PlexBaseURL = s.PlexBaseURL
 	}
@@ -47,6 +53,9 @@ func (a *App) effectiveConfig() Config {
 	}
 	if s.FileBotDB != "" {
 		cfg.FileBotDB = s.FileBotDB
+	}
+	if s.FileBotBinary != "" {
+		cfg.FileBotBinary = s.FileBotBinary
 	}
 	if s.SleepBetweenImports != "" {
 		if d, err := time.ParseDuration(s.SleepBetweenImports); err == nil {
