@@ -188,6 +188,12 @@ func chooseFileBotDB(meta ItemMetadata, fallback string) string {
 	if meta.TVDBID > 0 {
 		return "TheTVDB"
 	}
+	if normalizeKind(meta.Kind) == "series" {
+		return "TheTVDB"
+	}
+	if normalizeKind(meta.Kind) == "movie" {
+		return "TheMovieDB"
+	}
 	if strings.TrimSpace(fallback) == "" {
 		return "TheMovieDB"
 	}
