@@ -16,7 +16,7 @@ WORKDIR /app
 RUN apt-get update \
  && apt-get install -y curl ca-certificates unzip xz-utils \
  && rm -rf /var/lib/apt/lists/* \
- && curl -fsSL --retry 5 --retry-delay 2 --max-time 300 https://sourceforge.net/projects/filebot/files/filebot/FileBot_4.7.9/FileBot_4.7.9-portable.tar.xz/download -o /tmp/filebot.tar.xz \
+ && curl -fsSL --retry 5 --retry-delay 2 --max-time 300 https://get.filebot.net/filebot/FileBot_5.1.6/FileBot_5.1.6-portable.tar.xz -o /tmp/filebot.tar.xz \
  && mkdir -p /opt/filebot /tmp/filebot-extract \
  && tar -xJf /tmp/filebot.tar.xz -C /tmp/filebot-extract \
  && cp -a /tmp/filebot-extract/. /opt/filebot/ \
