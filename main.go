@@ -15,7 +15,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	log.Printf("winston: starting, mode=%s sleep_between_imports=%s", cfg.DefaultMode, cfg.SleepBetweenImports)
+	log.Printf("winston: starting, mode=%s sleep_between_imports=%s", app.cfg.DefaultMode, app.cfg.SleepBetweenImports)
 	if err := app.Run(ctx); err != nil {
 		log.Fatalf("winston: %v", err)
 	}
