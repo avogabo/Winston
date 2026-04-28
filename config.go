@@ -36,7 +36,7 @@ func LoadConfig() Config {
 		}
 	}
 
-	mode := getenv("WINSTON_DEFAULT_MODE", "preserve")
+	mode := getenv("WINSTON_DEFAULT_MODE", "filebot")
 	autoImportMedium := getenv("WINSTON_AUTOIMPORT_MEDIUM", "true") != "false"
 
 	return Config{

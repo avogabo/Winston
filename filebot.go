@@ -38,7 +38,7 @@ func NewFileBotClient(cfg Config) *FileBotClient {
 }
 
 func (f *FileBotClient) Enabled() bool {
-	return strings.EqualFold(strings.TrimSpace(f.cfg.DefaultMode), "filebot")
+	return true
 }
 
 func (f *FileBotClient) Available(ctx context.Context) bool {
