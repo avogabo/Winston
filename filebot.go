@@ -161,10 +161,17 @@ func (f *FileBotClient) resolveWithFileBot(ctx context.Context, sourceNZB string
 
 func parseFileBotOutput(out, root string) (string, bool) {
 	root = filepath.Clean(root)
+	reTest := regexp.MustCompile(`\[TEST\]\s+from\s+\[(.*?)\]\s+to\s+\[(.*?)\]`)
 	for _, line := range strings.Split(out, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
+		}
+		if m := reTest.FindStringSubmatch(line); len(m) == 3 {
+			candidate := strings.TrimSpace(m[2])
+			if rel, ok := trimToRelative(candidate, root); ok {
+				return rel, true
+			}
 		}
 		if strings.Contains(line, "=>") {
 			parts := strings.Split(line, "=>")
