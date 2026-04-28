@@ -131,6 +131,9 @@ func (f *FileBotClient) resolveWithFileBot(ctx context.Context, sourceNZB string
 		}
 		args = append(args, "--q", q)
 	}
+	if normalizeKind(meta.Kind) == "series" && meta.Season > 0 {
+		args = append(args, "--filter", fmt.Sprintf("s == %d", meta.Season))
+	}
 
 	cmd := exec.CommandContext(ctx, f.cfg.FileBotBinary, args...)
 	cmd.Env = append(os.Environ(), "FILEBOT_HOME="+f.cfg.FileBotHome)
