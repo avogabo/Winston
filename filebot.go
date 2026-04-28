@@ -92,6 +92,7 @@ func (f *FileBotClient) resolveWithFileBot(ctx context.Context, sourceNZB string
 	if normalizeKind(meta.Kind) == "series" {
 		format = f.cfg.FileBotSeriesFormat
 	}
+	format = strings.TrimSpace(strings.ReplaceAll(format, "\r", ""))
 	format = strings.TrimSpace(format)
 	if format == "" {
 		return nil, nil
