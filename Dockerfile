@@ -25,5 +25,7 @@ RUN apt-get update \
  && rm -rf /tmp/filebot.tar.xz /tmp/filebot-extract
 ENV FILEBOT_HOME=/config/filebot
 COPY --from=build /out/winston /app/winston
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 EXPOSE 8091
-ENTRYPOINT ["/app/winston"]
+ENTRYPOINT ["/entrypoint.sh"]
