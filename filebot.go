@@ -230,6 +230,12 @@ func (f *FileBotClient) resolveFallback(sourceNZB string, meta ItemMetadata) *Fi
 	if strings.TrimSpace(seriesFmt) == "" {
 		seriesFmt = "Series/{alpha}/{series}/Temporada {season}/{series} - {episode}"
 	}
+	if strings.Contains(seriesFmt, "id+") || strings.Contains(seriesFmt, "episode.special") || strings.Contains(seriesFmt, "{\"") {
+		seriesFmt = "Series/{alpha}/{series} ({year})/Temporada {season}/{series} ({year}) - {episode}"
+	}
+	if strings.Contains(movieFmt, "id+") || strings.Contains(movieFmt, "{\"") {
+		movieFmt = "Peliculas/{quality}/{alpha}/{title} ({year})/{title} ({year})"
+	}
 	mapping := map[string]string{
 		"title":   title,
 		"series":  title,
