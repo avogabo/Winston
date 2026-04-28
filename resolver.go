@@ -28,6 +28,7 @@ func (p *ImportProcessor) BuildPreview(sourceNZB string, meta ItemMetadata) *Ite
 
 	resolved, confidence, candidates, reason := p.matcher.Resolve(preview.Metadata, sourceNZB)
 	preview.Metadata = resolved
+	preview.Kind = normalizeKind(preview.Metadata.Kind)
 	preview.Confidence = confidence
 	preview.Reason = reason
 	preview.Candidates = candidates
