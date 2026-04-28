@@ -81,9 +81,10 @@ func (f *FileBotClient) Resolve(ctx context.Context, sourceNZB string, meta Item
 		return nil, nil
 	}
 	if res, err := f.resolveWithFileBot(ctx, sourceNZB, meta); err == nil && res != nil && strings.TrimSpace(res.RelativePath) != "" {
+		res.RelativePath = applyDetectedMovieQuality(res.RelativePath, meta)
 		return res, nil
 	}
-	return f.resolveFallback(sourceNZB, meta), nil
+	return applyDetectedMovieQualityResult(f.resolveFallback(sourceNZB, meta), meta), nil
 }
 
 func (f *FileBotClient) resolveWithFileBot(ctx context.Context, sourceNZB string, meta ItemMetadata) (*FileBotResolveResult, error) {
@@ -251,6 +252,39 @@ func applyTokenFormat(format string, mapping map[string]string) string {
 	}
 	out = regexp.MustCompile(`/+`).ReplaceAllString(out, "/")
 	return out
+}
+
+func applyDetectedMovieQualityResult(res *FileBotResolveResult, meta ItemMetadata) *FileBotResolveResult {
+	if res == nil {
+		return nil
+	}
+	res.RelativePath = applyDetectedMovieQuality(res.RelativePath, meta)
+	return res
+}
+
+func applyDetectedMovieQuality(rel string, meta ItemMetadata) string {
+	if normalizeKind(meta.Kind) != "movie" {
+		return rel
+	}
+	q := strings.TrimSpace(meta.Quality)
+	if q == "" || q == "unknown" {
+		return rel
+	}
+	rel = filepath.ToSlash(strings.TrimSpace(rel))
+	if rel == "" {
+		return rel
+	}
+	parts := strings.Split(rel, "/")
+	if len(parts) == 0 {
+		return rel
+	}
+	if parts[0] == "Peliculas" {
+		if len(parts) > 1 && parts[1] == q {
+			return rel
+		}
+		return filepath.ToSlash(filepath.Join("Peliculas", q, strings.Join(parts[1:], "/")))
+	}
+	return filepath.ToSlash(filepath.Join("Peliculas", q, rel))
 }
 
 func detectQuality(source string) string {
