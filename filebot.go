@@ -146,7 +146,10 @@ func (f *FileBotClient) resolveWithFileBot(ctx context.Context, sourceNZB string
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("filebot failed: %w stderr=%s", err, strings.TrimSpace(stderr.String()))
+		if rel, ok := parseFileBotOutput(stdout.String(), tmpDir); ok && strings.TrimSpace(rel) != "" {
+			return &FileBotResolveResult{RelativePath: filepath.ToSlash(rel), RawOutput: stdout.String(), Method: "filebot", EpisodeTitle: detectEpisodeTitleFromPath(rel), TVDBID: detectTVDBIDFromPath(rel)}, nil
+		}
+		return nil, fmt.Errorf("filebot failed: %w stderr=%s stdout=%s", err, strings.TrimSpace(stderr.String()), strings.TrimSpace(stdout.String()))
 	}
 
 	rel, ok := parseFileBotOutput(stdout.String(), tmpDir)
