@@ -85,6 +85,10 @@ func (f *FileBotClient) Resolve(ctx context.Context, sourceNZB string, meta Item
 	if res, err := f.resolveWithFileBot(ctx, sourceNZB, meta); err == nil && res != nil && strings.TrimSpace(res.RelativePath) != "" {
 		res.RelativePath = applyDetectedMovieQuality(res.RelativePath, meta)
 		return res, nil
+	} else if err != nil {
+		fb := applyDetectedMovieQualityResult(f.resolveFallback(sourceNZB, meta), meta)
+		fb.RawOutput = err.Error()
+		return fb, err
 	}
 	return applyDetectedMovieQualityResult(f.resolveFallback(sourceNZB, meta), meta), nil
 }

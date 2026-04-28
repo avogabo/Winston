@@ -47,6 +47,7 @@ func (p *ImportProcessor) buildPathForPreview(sourceNZB string, preview *ItemPre
 	}
 	if p.filebot != nil && p.filebot.Enabled() {
 		if resolved, err := p.filebot.Resolve(context.Background(), sourceNZB, preview.Metadata); err == nil && resolved != nil && strings.TrimSpace(resolved.RelativePath) != "" {
+			preview.ResolverMethod = resolved.Method
 			if preview.Metadata.ResolvedEpisodeTitle == "" && strings.TrimSpace(resolved.EpisodeTitle) != "" {
 				preview.Metadata.ResolvedEpisodeTitle = strings.TrimSpace(resolved.EpisodeTitle)
 			}
@@ -54,7 +55,13 @@ func (p *ImportProcessor) buildPathForPreview(sourceNZB string, preview *ItemPre
 				preview.Metadata.TVDBID = resolved.TVDBID
 			}
 			return resolved.RelativePath
+		} else if err != nil {
+			preview.ResolverMethod = "fallback"
+			preview.ResolverError = err.Error()
 		}
+	}
+	if preview.ResolverMethod == "" {
+		preview.ResolverMethod = "fallback"
 	}
 	return p.buildRelativePath(sourceNZB)
 }

@@ -40,4 +40,6 @@ type ItemPreview struct {
 	ProposedPath  string           `json:"proposed_path"`
 	Reason        string           `json:"reason"`
 	Candidates    []CandidateMatch `json:"candidates"`
+	ResolverMethod string          `json:"resolver_method,omitempty"`
+	ResolverError  string          `json:"resolver_error,omitempty"`
 }
