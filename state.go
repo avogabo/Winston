@@ -54,3 +54,14 @@ func (s *StateStore) Put(path string, rec ImportedRecord) error {
 	}
 	return os.WriteFile(s.path, b, 0644)
 }
+
+func (s *StateStore) Delete(path string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.Data.Imported, path)
+	b, err := json.MarshalIndent(s.Data, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(s.path, b, 0644)
+}

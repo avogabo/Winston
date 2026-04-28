@@ -41,7 +41,30 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("/api/filebot/status", a.handleFileBotStatus)
 	mux.HandleFunc("/api/review/approve", a.handleReviewApprove)
 	mux.HandleFunc("/api/review/import", a.handleReviewImport)
+	mux.HandleFunc("/api/review/reset", a.handleReviewReset)
 	return mux
+}
+
+func (a *App) handleReviewReset(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	source := strings.TrimSpace(r.URL.Query().Get("source"))
+	if source == "" {
+		http.Error(w, "missing source", http.StatusBadRequest)
+		return
+	}
+	if a.state == nil {
+		http.Error(w, "state store unavailable", http.StatusInternalServerError)
+		return
+	}
+	if err := a.state.Delete(source); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	preview := a.importProcessor.BuildPreview(source, ItemMetadata{})
+	writeJSON(w, http.StatusOK, preview)
 }
 
 func (a *App) handleFileBotStatus(w http.ResponseWriter, r *http.Request) {
