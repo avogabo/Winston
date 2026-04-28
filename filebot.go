@@ -22,6 +22,7 @@ type FileBotResolveResult struct {
 	RawOutput    string `json:"raw_output"`
 	Method       string `json:"method"`
 	EpisodeTitle string `json:"episode_title,omitempty"`
+	TVDBID       int    `json:"tvdb_id,omitempty"`
 }
 
 type FileBotStatus struct {
@@ -148,7 +149,7 @@ func (f *FileBotClient) resolveWithFileBot(ctx context.Context, sourceNZB string
 	if !ok || strings.TrimSpace(rel) == "" {
 		return nil, fmt.Errorf("filebot output did not contain target path")
 	}
-	return &FileBotResolveResult{RelativePath: filepath.ToSlash(rel), RawOutput: stdout.String(), Method: "filebot", EpisodeTitle: detectEpisodeTitleFromPath(rel)}, nil
+	return &FileBotResolveResult{RelativePath: filepath.ToSlash(rel), RawOutput: stdout.String(), Method: "filebot", EpisodeTitle: detectEpisodeTitleFromPath(rel), TVDBID: detectTVDBIDFromPath(rel)}, nil
 }
 
 func parseFileBotOutput(out, root string) (string, bool) {
@@ -230,7 +231,7 @@ func (f *FileBotClient) resolveFallback(sourceNZB string, meta ItemMetadata) *Fi
 		seriesFmt = "Series/{alpha}/{series}/Temporada {season}/{series} - {episode}"
 	}
 	if strings.Contains(seriesFmt, "id+") || strings.Contains(seriesFmt, "episode.special") || strings.Contains(seriesFmt, "{\"") {
-		seriesFmt = "Series/{alpha}/{series} ({year}) {tvdb}/Temporada {season}/{series} ({year}) - {episode} - {episode_title}"
+		seriesFmt = "Series/{alpha}/{series} ({year}) {tvdb}/Temporada {season}/{series} ({year}) - {episode}{episode_title_suffix}"
 	}
 	if strings.Contains(movieFmt, "id+") || strings.Contains(movieFmt, "{\"") {
 		movieFmt = "Peliculas/{quality}/{alpha}/{title} ({year})/{title} ({year})"
@@ -242,6 +243,7 @@ func (f *FileBotClient) resolveFallback(sourceNZB string, meta ItemMetadata) *Fi
 		"season":  twoDigits(defaultInt(meta.Season, 1)),
 		"episode": episodeToken(meta.Season, meta.Episode),
 		"episode_title": strings.TrimSpace(meta.ResolvedEpisodeTitle),
+		"episode_title_suffix": episodeTitleSuffix(meta.ResolvedEpisodeTitle),
 		"quality": quality,
 		"vf":      quality,
 		"alpha":   alpha,
@@ -307,6 +309,16 @@ func detectEpisodeTitleFromPath(rel string) string {
 	return ""
 }
 
+func detectTVDBIDFromPath(rel string) int {
+	re := regexp.MustCompile(`\{tvdb-(\d+)\}`)
+	m := re.FindStringSubmatch(rel)
+	if len(m) != 2 {
+		return 0
+	}
+	v, _ := strconv.Atoi(m[1])
+	return v
+}
+
 func detectQuality(source string) string {
 	low := strings.ToLower(source)
 	switch {
@@ -348,4 +360,12 @@ func tvdbToken(meta ItemMetadata) string {
 		return fmt.Sprintf("{tvdb-%d}", meta.TVDBID)
 	}
 	return "{tvdb}"
+}
+
+func episodeTitleSuffix(title string) string {
+	title = strings.TrimSpace(title)
+	if title == "" {
+		return ""
+	}
+	return " - " + title
 }

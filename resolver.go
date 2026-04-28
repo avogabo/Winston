@@ -50,6 +50,9 @@ func (p *ImportProcessor) buildPathForPreview(sourceNZB string, preview *ItemPre
 			if preview.Metadata.ResolvedEpisodeTitle == "" && strings.TrimSpace(resolved.EpisodeTitle) != "" {
 				preview.Metadata.ResolvedEpisodeTitle = strings.TrimSpace(resolved.EpisodeTitle)
 			}
+			if preview.Metadata.TVDBID == 0 && resolved.TVDBID > 0 {
+				preview.Metadata.TVDBID = resolved.TVDBID
+			}
 			return resolved.RelativePath
 		}
 	}
