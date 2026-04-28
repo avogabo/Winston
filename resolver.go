@@ -22,6 +22,9 @@ func (p *ImportProcessor) BuildPreview(sourceNZB string, meta ItemMetadata) *Ite
 	if preview.Metadata.Title == "" {
 		preview.Metadata.Title = cleanupTitle(base)
 	}
+	if strings.TrimSpace(preview.Metadata.Quality) == "" {
+		preview.Metadata.Quality = detectQualityForSource(sourceNZB)
+	}
 
 	resolved, confidence, candidates, reason := p.matcher.Resolve(preview.Metadata, sourceNZB)
 	preview.Metadata = resolved

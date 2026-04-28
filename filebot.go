@@ -232,6 +232,7 @@ func (f *FileBotClient) resolveFallback(sourceNZB string, meta ItemMetadata) *Fi
 		"season":  twoDigits(defaultInt(meta.Season, 1)),
 		"episode": episodeToken(meta.Season, meta.Episode),
 		"quality": quality,
+		"vf":      quality,
 		"alpha":   alpha,
 		"plex":    title,
 	}
