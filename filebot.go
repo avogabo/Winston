@@ -84,13 +84,17 @@ func (f *FileBotClient) Resolve(ctx context.Context, sourceNZB string, meta Item
 	}
 	if res, err := f.resolveWithFileBot(ctx, sourceNZB, meta); err == nil && res != nil && strings.TrimSpace(res.RelativePath) != "" {
 		res.RelativePath = applyDetectedMovieQuality(res.RelativePath, meta)
+		res.RelativePath = directoryOnlyRelativePath(res.RelativePath)
 		return res, nil
 	} else if err != nil {
 		fb := applyDetectedMovieQualityResult(f.resolveFallback(sourceNZB, meta), meta)
+		fb.RelativePath = directoryOnlyRelativePath(fb.RelativePath)
 		fb.RawOutput = err.Error()
 		return fb, err
 	}
-	return applyDetectedMovieQualityResult(f.resolveFallback(sourceNZB, meta), meta), nil
+	res := applyDetectedMovieQualityResult(f.resolveFallback(sourceNZB, meta), meta)
+	res.RelativePath = directoryOnlyRelativePath(res.RelativePath)
+	return res, nil
 }
 
 func (f *FileBotClient) resolveWithFileBot(ctx context.Context, sourceNZB string, meta ItemMetadata) (*FileBotResolveResult, error) {
@@ -359,6 +363,22 @@ func detectTVDBIDFromPath(rel string) int {
 	}
 	v, _ := strconv.Atoi(m[1])
 	return v
+}
+
+func directoryOnlyRelativePath(rel string) string {
+	rel = filepath.ToSlash(strings.TrimSpace(rel))
+	if rel == "" {
+		return rel
+	}
+	parts := strings.Split(rel, "/")
+	if len(parts) <= 1 {
+		return rel
+	}
+	last := parts[len(parts)-1]
+	if strings.Contains(last, ".") {
+		return strings.Join(parts[:len(parts)-1], "/")
+	}
+	return rel
 }
 
 func detectQuality(source string) string {
