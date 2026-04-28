@@ -106,7 +106,7 @@ func (f *FileBotClient) resolveWithFileBot(ctx context.Context, sourceNZB string
 	}
 	defer os.RemoveAll(tmpDir)
 
-	probe := filepath.Join(tmpDir, filepath.Base(sourceNZB))
+	probe := filepath.Join(tmpDir, buildFileBotProbeName(sourceNZB, meta))
 	if err := os.WriteFile(probe, []byte{}, 0644); err != nil {
 		return nil, err
 	}
@@ -203,6 +203,34 @@ func chooseFileBotDB(meta ItemMetadata, fallback string) string {
 		return "TheMovieDB"
 	}
 	return fallback
+}
+
+func buildFileBotProbeName(sourceNZB string, meta ItemMetadata) string {
+	base := cleanupTitle(strings.TrimSuffix(filepath.Base(sourceNZB), filepath.Ext(sourceNZB)))
+	if strings.TrimSpace(meta.Title) != "" {
+		base = strings.TrimSpace(meta.Title)
+		if meta.Year > 0 {
+			base = fmt.Sprintf("%s (%d)", base, meta.Year)
+		}
+		if normalizeKind(meta.Kind) == "series" {
+			if meta.Season > 0 && meta.Episode > 0 {
+				base = fmt.Sprintf("%s %02dx%02d", base, meta.Season, meta.Episode)
+			} else if meta.Season > 0 {
+				base = fmt.Sprintf("%s %02dx01", base, meta.Season)
+			}
+		}
+	}
+	return sanitizeProbeFilename(base) + ".mkv"
+}
+
+func sanitizeProbeFilename(name string) string {
+	replacer := strings.NewReplacer("/", " ", "\\", " ", ":", " ", "*", " ", "?", " ", "\"", " ", "<", " ", ">", " ", "|", " ")
+	name = replacer.Replace(name)
+	name = strings.Join(strings.Fields(name), " ")
+	if strings.TrimSpace(name) == "" {
+		return "probe"
+	}
+	return name
 }
 
 func (f *FileBotClient) resolveFallback(sourceNZB string, meta ItemMetadata) *FileBotResolveResult {
