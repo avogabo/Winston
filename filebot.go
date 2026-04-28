@@ -21,6 +21,7 @@ type FileBotResolveResult struct {
 	RelativePath string `json:"relative_path"`
 	RawOutput    string `json:"raw_output"`
 	Method       string `json:"method"`
+	EpisodeTitle string `json:"episode_title,omitempty"`
 }
 
 type FileBotStatus struct {
@@ -121,8 +122,6 @@ func (f *FileBotClient) resolveWithFileBot(ctx context.Context, sourceNZB string
 	}
 	if meta.TMDBID > 0 {
 		args = append(args, "--q", fmt.Sprintf("tmdbid=%d", meta.TMDBID))
-	} else if meta.TVDBID > 0 {
-		args = append(args, "--q", fmt.Sprintf("tvdbid=%d", meta.TVDBID))
 	} else if meta.IMDBID != "" {
 		args = append(args, "--q", meta.IMDBID)
 	} else if meta.Title != "" {
@@ -149,7 +148,7 @@ func (f *FileBotClient) resolveWithFileBot(ctx context.Context, sourceNZB string
 	if !ok || strings.TrimSpace(rel) == "" {
 		return nil, fmt.Errorf("filebot output did not contain target path")
 	}
-	return &FileBotResolveResult{RelativePath: filepath.ToSlash(rel), RawOutput: stdout.String(), Method: "filebot"}, nil
+	return &FileBotResolveResult{RelativePath: filepath.ToSlash(rel), RawOutput: stdout.String(), Method: "filebot", EpisodeTitle: detectEpisodeTitleFromPath(rel)}, nil
 }
 
 func parseFileBotOutput(out, root string) (string, bool) {
@@ -231,7 +230,7 @@ func (f *FileBotClient) resolveFallback(sourceNZB string, meta ItemMetadata) *Fi
 		seriesFmt = "Series/{alpha}/{series}/Temporada {season}/{series} - {episode}"
 	}
 	if strings.Contains(seriesFmt, "id+") || strings.Contains(seriesFmt, "episode.special") || strings.Contains(seriesFmt, "{\"") {
-		seriesFmt = "Series/{alpha}/{series} ({year})/Temporada {season}/{series} ({year}) - {episode}"
+		seriesFmt = "Series/{alpha}/{series} ({year}) {tvdb}/Temporada {season}/{series} ({year}) - {episode} - {episode_title}"
 	}
 	if strings.Contains(movieFmt, "id+") || strings.Contains(movieFmt, "{\"") {
 		movieFmt = "Peliculas/{quality}/{alpha}/{title} ({year})/{title} ({year})"
@@ -242,10 +241,12 @@ func (f *FileBotClient) resolveFallback(sourceNZB string, meta ItemMetadata) *Fi
 		"year":    maybeInt(meta.Year),
 		"season":  twoDigits(defaultInt(meta.Season, 1)),
 		"episode": episodeToken(meta.Season, meta.Episode),
+		"episode_title": strings.TrimSpace(meta.ResolvedEpisodeTitle),
 		"quality": quality,
 		"vf":      quality,
 		"alpha":   alpha,
 		"plex":    title,
+		"tvdb":    tvdbToken(meta),
 	}
 	format := movieFmt
 	if kind == "series" {
@@ -297,6 +298,15 @@ func applyDetectedMovieQuality(rel string, meta ItemMetadata) string {
 	return filepath.ToSlash(filepath.Join("Peliculas", q, rel))
 }
 
+func detectEpisodeTitleFromPath(rel string) string {
+	base := filepath.Base(rel)
+	base = strings.TrimSuffix(base, filepath.Ext(base))
+	if idx := strings.LastIndex(base, " - "); idx >= 0 && idx+3 < len(base) {
+		return strings.TrimSpace(base[idx+3:])
+	}
+	return ""
+}
+
 func detectQuality(source string) string {
 	low := strings.ToLower(source)
 	switch {
@@ -331,4 +341,11 @@ func twoDigits(v int) string {
 
 func episodeToken(season, episode int) string {
 	return fmt.Sprintf("%02dx%02d", defaultInt(season, 1), defaultInt(episode, 1))
+}
+
+func tvdbToken(meta ItemMetadata) string {
+	if meta.TVDBID > 0 {
+		return fmt.Sprintf("{tvdb-%d}", meta.TVDBID)
+	}
+	return "{tvdb}"
 }

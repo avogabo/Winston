@@ -10,5 +10,6 @@ type ItemMetadata struct {
 	Season               int    `json:"season"`
 	Episode              int    `json:"episode"`
 	Quality              string `json:"quality"`
+	ResolvedEpisodeTitle string `json:"resolved_episode_title"`
 	RelativePathOverride string `json:"relative_path_override"`
 }
