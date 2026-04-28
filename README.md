@@ -1,123 +1,150 @@
 # Winston
 
-Winston es un servicio puente para Unraid que:
+Winston vigila una carpeta de NZBs, decide la ruta lógica final, importa en AltMount de forma secuencial y expone una UI para revisar/corregir antes de publicar.
 
-1. toma NZBs existentes desde una carpeta fuente,
-2. decide la ruta lógica final que AltMount debe publicar,
-3. importa de forma secuencial en AltMount,
-4. y dispara escaneos selectivos en Plex solo sobre lo recién añadido.
+## Qué hace
 
-## Regla sagrada
+- no borra, mueve ni renombra los NZBs origen
+- importa en AltMount de uno en uno
+- espera a que AltMount termine antes de seguir
+- puede usar `preserve`, `template` o `filebot`
+- permite revisar y corregir desde web
+- guarda ajustes persistentes en `.winston-settings.json`
 
-**Ni Winston ni AltMount deben borrar jamás los NZBs origen.**
+## Instalación simple desde cero
 
-Consecuencias de diseño:
+### 1. Necesitas
 
-- Winston trata `source_nzb_path` como read-only.
-- Winston no mueve, no renombra y no borra NZBs origen.
-- Winston no hace cleanup destructivo sobre la carpeta fuente.
-- Si algún flujo necesita duplicar algo, será por copia explícita, nunca por move/delete.
+- AltMount funcionando
+- una carpeta con NZBs
+- licencia de FileBot si quieres modo `filebot`
 
-## Comportamiento principal
-
-Winston trabaja en modo secuencial para no saturar AltMount:
-
-1. toma un NZB,
-2. calcula `relative_path`,
-3. llama a `POST /api/import/file` en AltMount,
-4. espera a que AltMount lo procese,
-5. hace `sleep` configurable, por defecto `3s`,
-6. pasa al siguiente.
-
-## Idea de request hacia AltMount
-
-```json
-{
-  "file_path": "/nzb/pelis/1080/avatar.nzb",
-  "relative_path": "Peliculas/1080/A/Avatar (2000) {tvdb 1234}.mkv"
-}
-```
-
-
-## Metadata prevista por item
-
-Winston debe poder trabajar con metadata explícita por item, no solo deducida del nombre:
-
-- `tmdb_id`
-- `tvdb_id`
-- `imdb_id`
-- `kind` (`movie|series|episode|auto`)
-- `title`
-- `year`
-- `season`
-- `episode`
-- `quality`
-- `relative_path_override`
-
-Si viene `tmdb_id`, Winston debe priorizarlo como pista fuerte para el naming final y para FileBot cuando aplique.
-
-## MVP previsto
-
-- cola interna secuencial
-- cliente API para AltMount
-- generador de `relative_path`
-  - modo inicial `preserve`: conserva árbol relativo de la carpeta NZB
-- cliente básico para Plex
-- almacenamiento local simple para estado
-- Docker listo para despliegue en Unraid
-
-## Configuración prevista
-
-- `WINSTON_ALTMOUNT_BASE_URL`
-- `WINSTON_ALTMOUNT_API_KEY`
-- `WINSTON_PLEX_BASE_URL`
-- `WINSTON_PLEX_TOKEN`
-- `WINSTON_SLEEP_BETWEEN_IMPORTS`
-- `WINSTON_SOURCE_ROOT`
-- `WINSTON_DEFAULT_MODE=preserve|template|filebot|manual`
-- `WINSTON_MOVIES_TEMPLATE`
-- `WINSTON_SERIES_TEMPLATE`
-
-## Estados iniciales recomendados
-
-- concurrencia fija: `1`
-- sleep entre imports: `3s`
-- política de borrado NZB: inexistente
-- política de import: secuencial y conservadora
-- naming inicial: `preserve` para conservar el árbol relativo del origen NZB
-
-## Reglas de revisión y corrección
-
-Winston no debe pedir confirmación para todo.
-
-- Si el match es claro, importa automáticamente.
-- Si el match es dudoso, deja preview y pasa a revisión.
-- Si un item ya importado quedó mal identificado, debe poder corregirse después y volver a publicarse correctamente.
-
-Esto convierte a Winston en un sistema:
-- automático cuando hay confianza,
-- prudente cuando hay ambigüedad,
-- corregible tras importación.
-
-## Plex path mapping
-
-Si AltMount/Winston y Plex no ven la misma ruta física, Winston debe traducir la ruta antes del refresh selectivo.
+### 2. Prepara carpetas persistentes
 
 Ejemplo:
 
-- AltMount: `/home/Peliculas/1080/A/Avatar (2009).mkv`
-- Plex: `/media/biblioteca/Peliculas/1080/A/Avatar (2009).mkv`
+```bash
+mkdir -p /opt/winston/config/filebot
+mkdir -p /opt/winston/nzb
+```
 
-Variables:
+Copia tu licencia de FileBot aquí:
 
-- `WINSTON_PLEX_PATH_FROM`
-- `WINSTON_PLEX_PATH_TO`
+```bash
+/opt/winston/config/filebot/license.psm
+```
 
-## UI y API de revisión
+Importante:
+- Winston activa esa licencia al arrancar
+- el estado activado queda persistido en `/config/filebot/data`
+- así no parece un equipo nuevo en cada recreate
 
-Winston ya incluye una base de UI moderna en `web/` y una API HTTP mínima para operar revisión y ajustes.
+### 3. Arranca con Docker
 
-### API disponible
+```bash
+docker run -d \
+  --name winston \
+  --restart unless-stopped \
+  -p 8091:8091 \
+  -e WINSTON_SOURCE_ROOT=/data/nzb \
+  -e WINSTON_ALTMOUNT_BASE_URL=http://TU_ALTMOUNT:8989 \
+  -e WINSTON_ALTMOUNT_API_KEY=TU_API_KEY \
+  -e WINSTON_DEFAULT_MODE=filebot \
+  -e FILEBOT_HOME=/config/filebot \
+  -v /opt/winston/config:/config \
+  -v /opt/winston/nzb:/data/nzb \
+  ghcr.io/avogabo/winston:latest
+```
+
+### 4. Abre la UI
+
+- `http://TU_HOST:8091`
+
+### 5. Ajustes mínimos recomendados
+
+En la pestaña **Ajustes**:
+
+- `AltMount Base URL`
+- `AltMount API Key`
+- `Ruta Winston NZB`
+- `Ruta visible en AltMount`
+- `Modo de import = filebot`
+
+Si usas Plex también:
+
+- `Plex Base URL`
+- `Plex Token`
+- `Plex Path From`
+- `Plex Path To`
+
+## Docker Compose de ejemplo
+
+```yaml
+services:
+  winston:
+    image: ghcr.io/avogabo/winston:latest
+    container_name: winston
+    restart: unless-stopped
+    ports:
+      - "8091:8091"
+    environment:
+      WINSTON_HTTP_LISTEN_ADDR: ":8091"
+      WINSTON_SOURCE_ROOT: /data/nzb
+      WINSTON_ALTMOUNT_BASE_URL: http://192.168.1.100:8989
+      WINSTON_ALTMOUNT_API_KEY: TU_API_KEY
+      WINSTON_DEFAULT_MODE: filebot
+      WINSTON_SLEEP_BETWEEN_IMPORTS: 3s
+      WINSTON_AUTOIMPORT_MEDIUM: "true"
+      WINSTON_FILEBOT_FORMAT_MOVIE: Peliculas/{plex}
+      WINSTON_FILEBOT_FORMAT_SERIES: Series/{plex}
+      WINSTON_FILEBOT_DB: TheMovieDB
+      FILEBOT_HOME: /config/filebot
+    volumes:
+      - /opt/winston/config:/config
+      - /opt/winston/nzb:/data/nzb
+```
+
+## Plantilla rápida para Unraid
+
+### Puertos
+- `8091:8091`
+
+### Path mappings
+- `/config` → appdata persistente de Winston
+- `/data/nzb` → carpeta real de NZBs
+
+### Variables importantes
+- `WINSTON_SOURCE_ROOT=/data/nzb`
+- `WINSTON_ALTMOUNT_BASE_URL=http://IP_UNRAID:8989`
+- `WINSTON_ALTMOUNT_API_KEY=...`
+- `WINSTON_DEFAULT_MODE=filebot`
+- `FILEBOT_HOME=/config/filebot`
+
+### Archivo que debes copiar una vez
+- `/config/filebot/license.psm`
+
+## Cómo funciona FileBot aquí
+
+Winston ya hace esto automáticamente al arrancar:
+
+- usa FileBot `5.1.6`
+- fija `FILEBOT_HOME=/config/filebot`
+- enlaza `/opt/filebot/data` a `/config/filebot/data`
+- activa `license.psm` si aún no existe `/config/filebot/data/.license`
+- reutiliza la activación en siguientes recreates
+
+## Defaults recomendados
+
+### Películas
+- DB: `TheMovieDB`
+- formato: `Peliculas/{plex}`
+
+### Series
+- formato: `Series/{plex}`
+
+Nota: la elección de DB para series puede depender del comportamiento real de FileBot y sus proveedores en cada versión. La integración actual prioriza estabilidad operativa.
+
+## API disponible
 
 - `GET /api/review/items`
 - `GET /api/review/item?source=...`
@@ -126,39 +153,41 @@ Winston ya incluye una base de UI moderna en `web/` y una API HTTP mínima para 
 - `POST /api/review/import?source=...`
 - `GET /api/settings`
 - `POST /api/settings`
+- `GET /api/filebot/status`
 
-### Ajustes persistentes
+## Variables de entorno
 
-La UI guarda configuración en `WINSTON_SOURCE_ROOT/.winston-settings.json`.
+```env
+WINSTON_HTTP_LISTEN_ADDR=:8091
+WINSTON_SOURCE_ROOT=/data/nzb
+WINSTON_ALTMOUNT_BASE_URL=http://altmount:8989
+WINSTON_ALTMOUNT_API_KEY=
+WINSTON_PLEX_BASE_URL=http://plex:32400
+WINSTON_PLEX_TOKEN=
+WINSTON_PLEX_PATH_FROM=/home
+WINSTON_PLEX_PATH_TO=/media/biblioteca
+WINSTON_DEFAULT_MODE=filebot
+WINSTON_SLEEP_BETWEEN_IMPORTS=3s
+WINSTON_AUTOIMPORT_MEDIUM=true
+WINSTON_MOVIES_TEMPLATE=Peliculas/{quality}/{alpha}/{title} ({year})
+WINSTON_SERIES_TEMPLATE=Series/{alpha}/{series}/Temporada {season}/{series} - {episode}
+WINSTON_FILEBOT_FORMAT_MOVIE=Peliculas/{plex}
+WINSTON_FILEBOT_FORMAT_SERIES=Series/{plex}
+WINSTON_FILEBOT_DB=TheMovieDB
+WINSTON_FILEBOT_BINARY=/usr/local/bin/filebot
+FILEBOT_HOME=/config/filebot
+```
 
-Esa configuración ya puede afectar al runtime para:
-
-- AltMount
-- Plex
-- path mapping Plex
-- `sleep_between_imports`
-- `default_mode`
-- templates
-- FileBot formats
-- política `auto_import_medium`
-
-## Lanzar y probar local
-
-### backend
+## Desarrollo local
 
 ```bash
 go build ./...
 cp .env.example .env
-# editar valores reales
 set -a; source .env; set +a
 ./winston
 ```
 
-Por defecto la API escucha en:
-
-- `http://localhost:8091`
-
-### frontend
+Frontend:
 
 ```bash
 cd web
@@ -166,67 +195,14 @@ npm install
 npm run dev
 ```
 
-Si sirves el frontend separado en dev, apunta las llamadas al backend de Winston o usa proxy Vite.
+## Estado actual
 
-### binario único con UI embebida
+Winston ya está listo para:
 
-Si `web/dist` existe al compilar, Winston sirve también la UI desde el mismo puerto HTTP.
+- instalación con Docker simple
+- persistencia correcta de licencia FileBot
+- UI de ajustes
+- revisión y corrección
+- importación secuencial hacia AltMount
 
-```bash
-cd web
-npm install
-npm run build
-cd ..
-go build ./...
-./winston
-```
-
-Abre:
-
-- `http://localhost:8091`
-
-### docker
-
-El `Dockerfile` ya compila backend + frontend y deja la UI embebida en el binario final.
-
-```bash
-docker build -t winston:local .
-docker run --rm -p 8091:8091 --env-file .env -v /ruta/nzb:/data/nzb winston:local
-```
-
-## Estado actual del MVP
-
-Ya existe base operativa para:
-
-- revisión de items
-- corrección por `tmdb_id`
-- corrección por `relative_path_override`
-- aprobar desde UI
-- importar desde UI
-- ajustes persistentes desde UI
-
-## Pendiente antes de llamar esto “cerrado”
-
-- integrar matching más fuerte que el parse básico del nombre
-- soportar elección de candidato con update de metadata más rica
-- decidir corrección post-import avanzada si AltMount requiere reimport/republicación especial
-- dejar servido el build de `web/dist` desde el binario o contenedor final
-- validar con NZBs reales y AltMount real
-
-## FileBot (estado actual)
-
-Winston ya tiene una primera integración funcional de modo `filebot` para resolver `proposed_path` a partir de los formatos configurados.
-
-Importante:
-
-- todavía no es una integración completa con lookup rico real de FileBot
-- de momento usa metadata disponible en Winston y aplica los formatos configurados
-- sigue siendo obligatorio persistir `FILEBOT_HOME=/config/filebot` en volumen persistente para no romper licencias
-
-Variables relevantes:
-
-- `WINSTON_DEFAULT_MODE=filebot`
-- `WINSTON_FILEBOT_FORMAT_MOVIE`
-- `WINSTON_FILEBOT_FORMAT_SERIES`
-- `WINSTON_FILEBOT_DB`
-- `FILEBOT_HOME=/config/filebot`
+Lo que más ayuda a un usuario nuevo es montar bien `/config`, `/data/nzb` y copiar `license.psm` una sola vez.
