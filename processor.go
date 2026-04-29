@@ -85,6 +85,31 @@ func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error
 	}
 }
 
+func (p *ImportProcessor) EnsurePreview(sourceNZB string) (*ItemPreview, error) {
+	preview := p.BuildPreview(sourceNZB, ItemMetadata{})
+	if p.state != nil {
+		if rec, ok := p.state.Data.Imported[sourceNZB]; ok && rec.Metadata != (ItemMetadata{}) {
+			preview = p.BuildPreview(sourceNZB, rec.Metadata)
+		}
+		rec := ImportedRecord{}
+		if existing, ok := p.state.Data.Imported[sourceNZB]; ok {
+			rec = existing
+		}
+		rec.RelativePath = preview.ProposedPath
+		rec.State = preview.State
+		rec.Confidence = preview.Confidence
+		rec.Metadata = preview.Metadata
+		rec.Preview = preview
+		if rec.Status == "" {
+			rec.Status = "review"
+		}
+			if err := p.state.Put(sourceNZB, rec); err != nil {
+				return nil, err
+			}
+		}
+	return preview, nil
+}
+
 func (p *ImportProcessor) altMountFilePath(sourceNZB string) string {
 	from := strings.TrimSpace(p.cfg.AltMountPathFrom)
 	to := strings.TrimSpace(p.cfg.AltMountPathTo)

@@ -42,7 +42,34 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("/api/review/approve", a.handleReviewApprove)
 	mux.HandleFunc("/api/review/import", a.handleReviewImport)
 	mux.HandleFunc("/api/review/reset", a.handleReviewReset)
+	mux.HandleFunc("/api/review/rescan", a.handleReviewRescan)
 	return mux
+}
+
+func (a *App) handleReviewRescan(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if a.importProcessor == nil || a.queueRunner == nil {
+		http.Error(w, "processor unavailable", http.StatusInternalServerError)
+		return
+	}
+	items, err := a.queueRunner.listNZBs()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	for _, source := range items {
+		if a.state != nil && a.state.Has(source) {
+			continue
+		}
+		if _, err := a.importProcessor.EnsurePreview(source); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, ReviewListResponse{Items: a.reviewItems()})
 }
 
 func (a *App) handleReviewReset(w http.ResponseWriter, r *http.Request) {

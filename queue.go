@@ -53,7 +53,11 @@ func (q *QueueRunner) runOnce(ctx context.Context) error {
 		default:
 		}
 		if err := q.proc.ImportOne(ctx, nzb); err != nil {
-			return err
+			log.Printf("winston: import item error source=%s err=%v", nzb, err)
+			if q.proc.state != nil {
+				_ = q.proc.state.Put(nzb, ImportedRecord{RelativePath: "", Status: "error", State: StateFailed, Confidence: ConfidenceLow, Metadata: ItemMetadata{}, Preview: &ItemPreview{SourceNZBPath: nzb, State: StateFailed, Confidence: ConfidenceLow, ProposedPath: "", Reason: err.Error(), ResolverError: err.Error()}})
+			}
+			continue
 		}
 	}
 	return nil
