@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"path/filepath"
 	"strings"
@@ -59,11 +60,7 @@ func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error
 		return err
 	}
 	if resp.QueueID <= 0 {
-		log.Printf("winston: altmount returned queue_id=%d, treating as accepted without queue tracking source=%s relative_path=%s", resp.QueueID, sourceNZB, relativePath)
-		if p.state != nil {
-			_ = p.state.Put(sourceNZB, ImportedRecord{QueueID: resp.QueueID, RelativePath: relativePath, Status: "submitted", State: StateImported, Confidence: preview.Confidence, Metadata: preview.Metadata, Preview: preview})
-		}
-		return nil
+		return fmt.Errorf("altmount returned queue_id=%d, integration incomplete: no trackable queue item", resp.QueueID)
 	}
 	log.Printf("winston: imported source=%s queue_id=%d relative_path=%s", sourceNZB, resp.QueueID, relativePath)
 	if p.state != nil {
