@@ -21,7 +21,7 @@ func NewQueueRunner(cfg Config, proc *ImportProcessor) *QueueRunner {
 }
 
 func (q *QueueRunner) Run(ctx context.Context) error {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
 	for {
