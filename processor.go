@@ -35,9 +35,13 @@ func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error
 		}
 	}
 	relativePath := preview.ProposedPath
-	if p.state != nil && p.state.Has(sourceNZB) {
-		log.Printf("winston: skipping already imported nzb: %s", sourceNZB)
-		return nil
+	if p.state != nil {
+		if rec, ok := p.state.Data.Imported[sourceNZB]; ok {
+			if rec.Status == "submitted" || rec.Status == "completed" || rec.State == StateImported || rec.State == StateImporting {
+				log.Printf("winston: skipping already imported/in-flight nzb: %s status=%s state=%s", sourceNZB, rec.Status, rec.State)
+				return nil
+			}
+		}
 	}
 
 	if preview.State == StateNeedsReview && !(preview.Confidence == ConfidenceMedium && p.cfg.AutoImportMedium) {
