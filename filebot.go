@@ -123,6 +123,7 @@ func (f *FileBotClient) resolveWithFileBot(ctx context.Context, sourceNZB string
 		"-rename",
 		probe,
 		"--db", chooseFileBotDB(meta, f.cfg.FileBotDB),
+		"--lang", "es",
 		"--format", format,
 		"--action", "test",
 		"--output", tmpDir,
