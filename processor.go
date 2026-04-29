@@ -58,6 +58,13 @@ func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error
 	if err != nil {
 		return err
 	}
+	if resp.QueueID <= 0 {
+		log.Printf("winston: altmount returned queue_id=%d, treating as accepted without queue tracking source=%s relative_path=%s", resp.QueueID, sourceNZB, relativePath)
+		if p.state != nil {
+			_ = p.state.Put(sourceNZB, ImportedRecord{QueueID: resp.QueueID, RelativePath: relativePath, Status: "submitted", State: StateImported, Confidence: preview.Confidence, Metadata: preview.Metadata, Preview: preview})
+		}
+		return nil
+	}
 	log.Printf("winston: imported source=%s queue_id=%d relative_path=%s", sourceNZB, resp.QueueID, relativePath)
 	if p.state != nil {
 		_ = p.state.Put(sourceNZB, ImportedRecord{QueueID: resp.QueueID, RelativePath: relativePath, Status: "submitted", State: StateImporting, Confidence: preview.Confidence, Metadata: preview.Metadata, Preview: preview})
