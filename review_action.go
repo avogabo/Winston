@@ -8,6 +8,7 @@ func (p *ImportProcessor) Approve(sourceNZB string) (*ItemPreview, error) {
 	preview := p.BuildPreview(sourceNZB, rec.Metadata)
 	preview.State = StateApproved
 	rec.State = StateApproved
+	rec.Status = "approved"
 	rec.Confidence = preview.Confidence
 	rec.RelativePath = preview.ProposedPath
 	rec.Preview = preview
