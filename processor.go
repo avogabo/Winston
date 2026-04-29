@@ -131,8 +131,13 @@ func (p *ImportProcessor) altMountFilePath(sourceNZB string) string {
 	if cleanSource == cleanFrom {
 		return cleanTo
 	}
+	baseName := filepath.Base(cleanSource)
+	flatCandidate := filepath.ToSlash(filepath.Join(cleanTo, baseName))
 	if rel, err := filepath.Rel(cleanFrom, cleanSource); err == nil && rel != "." && !strings.HasPrefix(rel, "..") {
+		if strings.Contains(rel, string(filepath.Separator)) {
+			return flatCandidate
+		}
 		return filepath.ToSlash(filepath.Join(cleanTo, rel))
 	}
-	return sourceNZB
+	return flatCandidate
 }
