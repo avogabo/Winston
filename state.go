@@ -40,8 +40,14 @@ func NewStateStore(root string) (*StateStore, error) {
 func (s *StateStore) Has(path string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	_, ok := s.Data.Imported[path]
-	return ok
+	rec, ok := s.Data.Imported[path]
+	if !ok {
+		return false
+	}
+	if rec.Status == "error" || rec.State == StateFailed {
+		return false
+	}
+	return true
 }
 
 func (s *StateStore) Put(path string, rec ImportedRecord) error {
