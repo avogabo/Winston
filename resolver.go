@@ -46,9 +46,14 @@ func (p *ImportProcessor) buildPathForPreview(sourceNZB string, preview *ItemPre
 	if preview.Metadata.RelativePathOverride != "" {
 		return preview.Metadata.RelativePathOverride
 	}
+	if strings.TrimSpace(preview.Metadata.ResolvedRelativePath) != "" {
+		preview.ResolverMethod = "cached"
+		return preview.Metadata.ResolvedRelativePath
+	}
 	if p.filebot != nil && p.filebot.Enabled() {
 		if resolved, err := p.filebot.Resolve(context.Background(), sourceNZB, preview.Metadata); err == nil && resolved != nil && strings.TrimSpace(resolved.RelativePath) != "" {
 			preview.ResolverMethod = resolved.Method
+			preview.Metadata.ResolvedRelativePath = strings.TrimSpace(resolved.RelativePath)
 			if preview.Metadata.ResolvedEpisodeTitle == "" && strings.TrimSpace(resolved.EpisodeTitle) != "" {
 				preview.Metadata.ResolvedEpisodeTitle = strings.TrimSpace(resolved.EpisodeTitle)
 			}
