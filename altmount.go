@@ -49,6 +49,7 @@ func (c *AltMountClient) ImportFile(ctx context.Context, req ManualImportRequest
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("winston altmount payload: %s\n", string(payload))
 
 	u := c.baseURL + "/api/import/file"
 	if c.apiKey != "" {
