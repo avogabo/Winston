@@ -16,6 +16,7 @@ func (p *ImportProcessor) BuildPreview(sourceNZB string, meta ItemMetadata) *Ite
 	}
 
 	base := strings.TrimSuffix(filepath.Base(sourceNZB), filepath.Ext(sourceNZB))
+	base = stripSyntheticTestPrefixes(base)
 	if preview.Kind == "" || preview.Kind == "auto" {
 		preview.Kind = guessKindFromPath(sourceNZB)
 	}
@@ -95,4 +96,20 @@ func cleanupTitle(s string) string {
 	s = strings.ReplaceAll(s, "_", " ")
 	s = strings.Join(strings.Fields(s), " ")
 	return strings.TrimSpace(s)
+}
+
+func stripSyntheticTestPrefixes(s string) string {
+	s = strings.TrimSpace(s)
+	prefixes := []string{
+		"TEST-WINSTON-REAL-",
+		"TEST-WINSTON-NORMAL-",
+		"TEST-WINSTON-NUEVO-",
+		"TEST-WINSTON-",
+	}
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(s, prefix) {
+			return strings.TrimSpace(strings.TrimPrefix(s, prefix))
+		}
+	}
+	return s
 }
