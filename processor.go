@@ -28,13 +28,6 @@ func (p *ImportProcessor) Run(ctx context.Context) error {
 }
 
 func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error {
-	preview := p.BuildPreview(sourceNZB, ItemMetadata{})
-	if p.state != nil {
-		if rec, ok := p.state.Data.Imported[sourceNZB]; ok && rec.Metadata != (ItemMetadata{}) {
-			preview = p.BuildPreview(sourceNZB, rec.Metadata)
-		}
-	}
-	relativePath := preview.ProposedPath
 	if p.state != nil {
 		if rec, ok := p.state.Data.Imported[sourceNZB]; ok {
 			if rec.Status == "submitted" || rec.Status == "completed" || rec.State == StateImported || rec.State == StateImporting {
@@ -43,6 +36,14 @@ func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error
 			}
 		}
 	}
+
+	preview := p.BuildPreview(sourceNZB, ItemMetadata{})
+	if p.state != nil {
+		if rec, ok := p.state.Data.Imported[sourceNZB]; ok && rec.Metadata != (ItemMetadata{}) {
+			preview = p.BuildPreview(sourceNZB, rec.Metadata)
+		}
+	}
+	relativePath := preview.ProposedPath
 
 	if preview.State == StateNeedsReview && !(preview.Confidence == ConfidenceMedium && p.cfg.AutoImportMedium) {
 		log.Printf("winston: review required for %s proposed=%s reason=%s", sourceNZB, preview.ProposedPath, preview.Reason)
