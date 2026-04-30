@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -18,8 +19,8 @@ type AltMountClient struct {
 }
 
 type ManualImportRequest struct {
-	FilePath     string `json:"file_path"`
-	RelativePath string `json:"relative_path"`
+	FilePath     string  `json:"file_path"`
+	RelativePath *string `json:"relative_path,omitempty"`
 }
 
 type APIEnvelope struct {
@@ -84,4 +85,23 @@ func (c *AltMountClient) ImportFile(ctx context.Context, req ManualImportRequest
 		}
 	}
 	return &out, nil
+}
+
+func (c *AltMountClient) BuildImportRequest(sourceNZB string, mappedFilePath string, relativePath string) ManualImportRequest {
+	derivedRelative := ""
+	if strings.TrimSpace(sourceNZB) != "" && strings.TrimSpace(mappedFilePath) != "" {
+		base := filepath.Dir(filepath.Clean(mappedFilePath))
+		if rel, err := filepath.Rel(base, filepath.Clean(mappedFilePath)); err == nil && !strings.HasPrefix(rel, "..") {
+			_ = rel
+		}
+	}
+	if strings.TrimSpace(relativePath) != "" {
+		derivedRelative = strings.TrimSpace(relativePath)
+	}
+	var relPtr *string
+	if derivedRelative != "" {
+		rel := derivedRelative
+		relPtr = &rel
+	}
+	return ManualImportRequest{FilePath: mappedFilePath, RelativePath: relPtr}
 }

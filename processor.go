@@ -58,7 +58,7 @@ func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error
 	}
 	resp, err := p.alt.ImportFile(ctx, ManualImportRequest{
 		FilePath:     p.altMountFilePath(sourceNZB),
-		RelativePath: relativePath,
+		RelativePath: func() *string { if strings.TrimSpace(relativePath) == "" { return nil }; v := strings.TrimSpace(relativePath); return &v }(),
 	})
 	if err != nil {
 		return err
