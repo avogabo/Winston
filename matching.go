@@ -30,7 +30,7 @@ func (m *Matcher) Resolve(meta ItemMetadata, sourceNZB string) (ItemMetadata, Ma
 		return meta, ConfidenceMedium, nil, "manual_title_year"
 	}
 
-	base := cleanupTitle(strings.TrimSuffix(filepathBase(sourceNZB), filepathExt(sourceNZB)))
+	base := cleanupTitle(stripSyntheticTestPrefixes(strings.TrimSuffix(filepathBase(sourceNZB), filepathExt(sourceNZB))))
 	if parsed, ok := parseStructuredName(base, meta); ok {
 		reason := "title_year_episode_parse"
 		score := 78
