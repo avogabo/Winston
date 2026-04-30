@@ -26,6 +26,7 @@ type Config struct {
 	AltMountPathTo      string
 	SleepBetweenImports time.Duration
 	AutoImportMedium    bool
+	BackgroundQueue     bool
 }
 
 func LoadConfig() Config {
@@ -38,6 +39,7 @@ func LoadConfig() Config {
 
 	mode := getenv("WINSTON_DEFAULT_MODE", "filebot")
 	autoImportMedium := getenv("WINSTON_AUTOIMPORT_MEDIUM", "true") != "false"
+	backgroundQueue := getenv("WINSTON_BACKGROUND_QUEUE", "false") == "true"
 
 	return Config{
 		HTTPListenAddr:      getenv("WINSTON_HTTP_LISTEN_ADDR", ":8091"),
@@ -60,6 +62,7 @@ func LoadConfig() Config {
 		AltMountPathTo:      getenv("WINSTON_ALTMOUNT_PATH_TO", ""),
 		SleepBetweenImports: sleep,
 		AutoImportMedium:    autoImportMedium,
+		BackgroundQueue:     backgroundQueue,
 	}
 }
 

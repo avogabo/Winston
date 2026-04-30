@@ -52,5 +52,10 @@ func (a *App) Run(ctx context.Context) error {
 		<-ctx.Done()
 		return nil
 	}
+	if !a.cfg.BackgroundQueue {
+		log.Printf("winston: background queue disabled, waiting for manual actions only")
+		<-ctx.Done()
+		return nil
+	}
 	return a.queueRunner.Run(ctx)
 }
