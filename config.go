@@ -25,6 +25,7 @@ type Config struct {
 	AltMountPathFrom    string
 	AltMountPathTo      string
 	AltMountStagingDir  string
+	AltMountStagingPath string
 	SleepBetweenImports time.Duration
 	AutoImportMedium    bool
 }
@@ -60,6 +61,7 @@ func LoadConfig() Config {
 		AltMountPathFrom:    getenv("WINSTON_ALTMOUNT_PATH_FROM", ""),
 		AltMountPathTo:      getenv("WINSTON_ALTMOUNT_PATH_TO", ""),
 		AltMountStagingDir:  getenv("WINSTON_ALTMOUNT_STAGING_DIR", ""),
+		AltMountStagingPath: getenv("WINSTON_ALTMOUNT_STAGING_PATH", ""),
 		SleepBetweenImports: sleep,
 		AutoImportMedium:    autoImportMedium,
 	}

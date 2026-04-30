@@ -154,7 +154,8 @@ func (p *ImportProcessor) stageAltMountNZB(sourceNZB string) string {
 	if staging == "" {
 		return p.altMountFilePath(sourceNZB)
 	}
-	target := filepath.Join(staging, filepath.Base(sourceNZB))
+	baseName := filepath.Base(sourceNZB)
+	target := filepath.Join(staging, baseName)
 	if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
 		log.Printf("winston: altmount staging mkdir failed source=%s target=%s err=%v", sourceNZB, target, err)
 		return p.altMountFilePath(sourceNZB)
@@ -177,6 +178,10 @@ func (p *ImportProcessor) stageAltMountNZB(sourceNZB string) string {
 	}
 	if err := dst.Close(); err != nil {
 		log.Printf("winston: altmount staging close target failed source=%s target=%s err=%v", sourceNZB, target, err)
+	}
+	stagingPath := strings.TrimSpace(p.cfg.AltMountStagingPath)
+	if stagingPath != "" {
+		return filepath.ToSlash(filepath.Join(stagingPath, baseName))
 	}
 	return p.altMountFilePath(target)
 }
