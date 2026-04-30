@@ -24,6 +24,7 @@ type Config struct {
 	PlexPathTo          string
 	AltMountPathFrom    string
 	AltMountPathTo      string
+	AltMountStagingDir  string
 	SleepBetweenImports time.Duration
 	AutoImportMedium    bool
 }
@@ -58,6 +59,7 @@ func LoadConfig() Config {
 		PlexPathTo:          getenv("WINSTON_PLEX_PATH_TO", ""),
 		AltMountPathFrom:    getenv("WINSTON_ALTMOUNT_PATH_FROM", ""),
 		AltMountPathTo:      getenv("WINSTON_ALTMOUNT_PATH_TO", ""),
+		AltMountStagingDir:  getenv("WINSTON_ALTMOUNT_STAGING_DIR", ""),
 		SleepBetweenImports: sleep,
 		AutoImportMedium:    autoImportMedium,
 	}

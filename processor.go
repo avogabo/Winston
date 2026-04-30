@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -57,7 +59,7 @@ func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error
 		return nil
 	}
 	resp, err := p.alt.ImportFile(ctx, ManualImportRequest{
-		FilePath:     p.altMountFilePath(sourceNZB),
+		FilePath:     p.stageAltMountNZB(sourceNZB),
 		RelativePath: func() *string { if strings.TrimSpace(relativePath) == "" { return nil }; v := strings.TrimSpace(relativePath); return &v }(),
 	})
 	if err != nil {
@@ -145,4 +147,36 @@ func (p *ImportProcessor) altMountFilePath(sourceNZB string) string {
 		return filepath.ToSlash(filepath.Join(cleanTo, rel))
 	}
 	return sourceNZB
+}
+
+func (p *ImportProcessor) stageAltMountNZB(sourceNZB string) string {
+	staging := strings.TrimSpace(p.cfg.AltMountStagingDir)
+	if staging == "" {
+		return p.altMountFilePath(sourceNZB)
+	}
+	target := filepath.Join(staging, filepath.Base(sourceNZB))
+	if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+		log.Printf("winston: altmount staging mkdir failed source=%s target=%s err=%v", sourceNZB, target, err)
+		return p.altMountFilePath(sourceNZB)
+	}
+	src, err := os.Open(sourceNZB)
+	if err != nil {
+		log.Printf("winston: altmount staging open source failed source=%s err=%v", sourceNZB, err)
+		return p.altMountFilePath(sourceNZB)
+	}
+	defer src.Close()
+	dst, err := os.Create(target)
+	if err != nil {
+		log.Printf("winston: altmount staging create target failed source=%s target=%s err=%v", sourceNZB, target, err)
+		return p.altMountFilePath(sourceNZB)
+	}
+	if _, err := io.Copy(dst, src); err != nil {
+		dst.Close()
+		log.Printf("winston: altmount staging copy failed source=%s target=%s err=%v", sourceNZB, target, err)
+		return p.altMountFilePath(sourceNZB)
+	}
+	if err := dst.Close(); err != nil {
+		log.Printf("winston: altmount staging close target failed source=%s target=%s err=%v", sourceNZB, target, err)
+	}
+	return p.altMountFilePath(target)
 }
