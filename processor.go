@@ -30,8 +30,8 @@ func (p *ImportProcessor) Run(ctx context.Context) error {
 func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error {
 	if p.state != nil {
 		if rec, ok := p.state.Data.Imported[sourceNZB]; ok {
-			if rec.Status == "submitted" || rec.Status == "completed" || rec.State == StateImported || rec.State == StateImporting {
-				log.Printf("winston: skipping already imported/in-flight nzb: %s status=%s state=%s", sourceNZB, rec.Status, rec.State)
+			if rec.Status == "submitted" || rec.Status == "completed" || rec.Status == "error" || rec.State == StateImported || rec.State == StateImporting || rec.State == StateFailed {
+				log.Printf("winston: skipping already seen nzb: %s status=%s state=%s", sourceNZB, rec.Status, rec.State)
 				return nil
 			}
 		}
