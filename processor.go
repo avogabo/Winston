@@ -46,6 +46,9 @@ func (p *ImportProcessor) ImportOne(ctx context.Context, sourceNZB string) error
 		}
 	}
 	relativePath := preview.ProposedPath
+	if normalizeKind(preview.Metadata.Kind) == "series" && preview.Metadata.Season > 0 && preview.Metadata.Episode == 0 {
+		relativePath = filepath.ToSlash(filepath.Dir(relativePath))
+	}
 
 	if preview.State == StateNeedsReview && !(preview.Confidence == ConfidenceMedium && p.cfg.AutoImportMedium) {
 		log.Printf("winston: review required for %s proposed=%s reason=%s", sourceNZB, preview.ProposedPath, preview.Reason)
